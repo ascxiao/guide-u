@@ -1,0 +1,40 @@
+# Python/Backend
+backend/.env
+backend/.env.*
+backend/__pycache__/
+backend/*.pyc
+backend/.venv/
+backend/venv/
+backend/.mypy_cache/
+backend/.pytest_cache/
+backend/.DS_Store
+
+# Flutter/Frontend
+frontend/guide_u_flutter/.env
+frontend/guide_u_flutter/.env.*
+frontend/guide_u_flutter/.dart_tool/
+frontend/guide_u_flutter/.idea/
+frontend/guide_u_flutter/.packages
+frontend/guide_u_flutter/build/
+frontend/guide_u_flutter/ios/Flutter/Flutter.framework
+frontend/guide_u_flutter/ios/Flutter/Flutter.podspec
+frontend/guide_u_flutter/ios/Flutter/Generated.xcconfig
+frontend/guide_u_flutter/ios/Flutter/ephemeral/
+frontend/guide_u_flutter/ios/Pods/
+frontend/guide_u_flutter/ios/Runner.xcworkspace/
+frontend/guide_u_flutter/ios/Runner.xcodeproj/project.xcworkspace/
+frontend/guide_u_flutter/macos/Flutter/ephemeral/
+frontend/guide_u_flutter/macos/Pods/
+frontend/guide_u_flutter/macos/Runner.xcworkspace/
+frontend/guide_u_flutter/macos/Runner.xcodeproj/project.xcworkspace/
+frontend/guide_u_flutter/linux/flutter/ephemeral/
+frontend/guide_u_flutter/linux/build/
+frontend/guide_u_flutter/windows/flutter/ephemeral/
+frontend/guide_u_flutter/windows/build/
+frontend/guide_u_flutter/web/.dart_tool/
+
+# System files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
