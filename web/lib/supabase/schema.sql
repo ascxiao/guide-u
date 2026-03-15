@@ -56,6 +56,8 @@ create table saved_articles (
 create table incident_reports (
     id uuid primary key default uuid_generate_v4(),
     user_id uuid references auth.users(id),
+    reporter_student_id text,
+    reporter_email text,
     title text,
     description text,
     location text,
@@ -71,6 +73,8 @@ create table incident_reports (
 create table lost_found_reports (
     id uuid primary key default uuid_generate_v4(),
     user_id uuid references auth.users(id),
+    reporter_student_id text,
+    reporter_email text,
     item_name text,
     description text,
     location text,
