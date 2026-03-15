@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -62,15 +63,16 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 py-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20">
-            <span className="text-sm font-bold text-white">G</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-white leading-tight">GuideU</span>
-            <span className="text-xs text-white/70 leading-tight">Admin Portal</span>
-          </div>
+      <SidebarHeader className="px-4 pt-6 pb-4">
+        <div className="flex w-full items-center justify-center">
+          <Image
+            src="/images/logo.svg"
+            alt="GuideU"
+            width={140}
+            height={40}
+            priority
+            className="h-10 w-auto max-w-[9.5rem] object-contain brightness-0 invert"
+          />
         </div>
       </SidebarHeader>
 
