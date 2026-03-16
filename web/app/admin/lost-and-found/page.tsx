@@ -15,6 +15,7 @@ import {
   LostFoundStatusBadge,
   ReportTypeBadge,
 } from "./lost-found-detail-sheet"
+import { LostFoundFormSheet } from "./lost-found-form-sheet"
 import type { LostFoundReport } from "@/lib/supabase/types"
 
 const STATUS_FILTERS = [
@@ -78,11 +79,14 @@ export default async function LostAndFoundPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Lost and Found</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          View and manage lost and found submissions from the mobile app.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Lost and Found</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            View and manage lost and found submissions from the mobile app.
+          </p>
+        </div>
+        <LostFoundFormSheet />
       </div>
 
       {/* Status filters */}

@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -11,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { IncidentDetailSheet, StatusBadge } from "./incident-detail-sheet"
+import { IncidentFormSheet } from "./incident-form-sheet"
 import type { IncidentReport, IncidentStatus } from "@/lib/supabase/types"
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
@@ -20,6 +22,10 @@ const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "resolved", label: "Resolved" },
   { value: "closed", label: "Closed" },
 ]
+
+export const metadata: Metadata = {
+  title: "Incident Reports | GuideU Admin",
+}
 
 export default async function IncidentReportPage({
   searchParams,
@@ -55,11 +61,14 @@ export default async function IncidentReportPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Incident Reports</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Review and manage submitted incident reports from the mobile app.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Incident Reports</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Review and manage submitted incident reports from the mobile app.
+          </p>
+        </div>
+        <IncidentFormSheet />
       </div>
 
       {/* Status count pills */}

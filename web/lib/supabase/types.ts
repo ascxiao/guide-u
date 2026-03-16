@@ -9,6 +9,8 @@ export type ReportType = "lost" | "found"
 export interface IncidentReport {
   id: string
   user_id: string | null
+  reporter_student_id: string | null
+  reporter_email: string | null
   title: string | null
   description: string | null
   location: string | null
@@ -20,6 +22,8 @@ export interface IncidentReport {
 export interface LostFoundReport {
   id: string
   user_id: string | null
+  reporter_student_id: string | null
+  reporter_email: string | null
   item_name: string | null
   description: string | null
   location: string | null
