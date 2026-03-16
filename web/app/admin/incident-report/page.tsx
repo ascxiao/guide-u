@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -21,6 +22,10 @@ const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "resolved", label: "Resolved" },
   { value: "closed", label: "Closed" },
 ]
+
+export const metadata: Metadata = {
+  title: "Incident Reports | GuideU Admin",
+}
 
 export default async function IncidentReportPage({
   searchParams,

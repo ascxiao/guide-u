@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/server"
 import type { IncidentStatus } from "@/lib/supabase/types"
-import { sendStatusChangeEmail } from "@/lib/email/status-notifier"
+import { sendIncidentCreatedEmail, sendStatusChangeEmail } from "@/lib/email/status-notifier"
 
 const INCIDENT_BUCKET = "incident-report-images"
+const INCIDENT_CREATE_NOTIFICATION_EMAIL = "usls.projectdigitalization@gmail.com"
 
 function looksLikeEmail(value: string | null) {
   if (!value) return false
@@ -104,6 +105,21 @@ export async function createIncidentReport(formData: FormData) {
     }
 
     if (error) return { error: error.message }
+
+    // Keep report creation successful even if notification email fails.
+    try {
+      await sendIncidentCreatedEmail({
+        to: INCIDENT_CREATE_NOTIFICATION_EMAIL,
+        title: title ?? "",
+        description: description ?? "",
+        location: location ?? "",
+        reporterStudentId: reporterStudentId ?? "",
+        reporterEmail: reporterEmail ?? "",
+        imageCount: imagePaths.length,
+      })
+    } catch {
+      // Swallow email errors so report persistence is not blocked.
+    }
 
     revalidatePath("/admin/incident-report")
     return { success: true }
