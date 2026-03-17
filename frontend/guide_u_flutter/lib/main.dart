@@ -4,6 +4,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'view_models/saved_articles_view_model.dart';
+import 'views/handbook_main_page.dart';
+import 'views/login_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +30,6 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -38,8 +39,32 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.main,
+      home: const AuthGate(),
       onGenerateRoute: AppRoutes.onGenerateRoute,
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = Supabase.instance.client.auth;
+
+    return StreamBuilder<AuthState>(
+      stream: auth.onAuthStateChange,
+      initialData: AuthState(
+        AuthChangeEvent.initialSession,
+        auth.currentSession,
+      ),
+      builder: (context, snapshot) {
+        final session = snapshot.data?.session ?? auth.currentSession;
+        if (session == null) {
+          return const LoginScreen();
+        }
+        return const HandbookMainPage();
+      },
     );
   }
 }
