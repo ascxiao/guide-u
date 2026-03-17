@@ -29,7 +29,7 @@ class GuideURagService {
         params: {
           'query_embedding': embedResult.embedding.values,
           'match_threshold': 0.3,
-          'match_count': 5,
+          'match_count': 2,
         },
       );
 
@@ -60,7 +60,7 @@ class GuideURagService {
         },
         body: jsonEncode({
           'model':
-              'llama-3.1-8b-instant', // Groq's lightning-fast open source model
+              'llama-3.3-70b-versatile', // Groq's lightning-fast open source model
           'messages': [
             {
               'role': 'system',
@@ -75,6 +75,7 @@ class GuideURagService {
           ],
           'temperature':
               0.2, // Kept low so it doesn't hallucinate handbook rules
+          'max_tokens': 800,
         }),
       );
 

@@ -3,6 +3,7 @@ import '../routes/app_routes.dart';
 import 'handbook_bottom_nav_bar.dart';
 // ...existing code...
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../view_models/handbook_main_view_model.dart';
 
 class HandbookMainPage extends StatelessWidget {
@@ -21,6 +22,14 @@ class HandbookMainPage extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  tooltip: 'Sign Out',
+                  color: const Color(0xFF006633),
+                  onPressed: () async {
+                    await Supabase.instance.client.auth.signOut();
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.bookmark_border),
                   tooltip: 'Saved',
@@ -67,14 +76,20 @@ class HandbookMainPage extends StatelessWidget {
                       ...sections.entries.map((sectionEntry) {
                         final articles = sectionEntry.value;
                         // Use the sectionId from the first article in the group, fallback to the key if needed
-                        final sectionId = (articles.isNotEmpty && articles.first.sectionId != null && articles.first.sectionId!.isNotEmpty)
-                          ? articles.first.sectionId!
-                          : sectionEntry.key;
+                        final sectionId =
+                            (articles.isNotEmpty &&
+                                articles.first.sectionId != null &&
+                                articles.first.sectionId!.isNotEmpty)
+                            ? articles.first.sectionId!
+                            : sectionEntry.key;
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(left: 8, bottom: 6),
+                              padding: const EdgeInsets.only(
+                                left: 8,
+                                bottom: 6,
+                              ),
                               child: Text(
                                 'Section $sectionId',
                                 style: const TextStyle(
@@ -84,66 +99,86 @@ class HandbookMainPage extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            ...articles.map((article) => Container(
-                              margin: const EdgeInsets.only(bottom: 12, left: 8, right: 8),
-                              child: Material(
-                                elevation: 2,
-                                borderRadius: BorderRadius.circular(16),
-                                color: Colors.white,
-                                child: InkWell(
+                            ...articles.map(
+                              (article) => Container(
+                                margin: const EdgeInsets.only(
+                                  bottom: 12,
+                                  left: 8,
+                                  right: 8,
+                                ),
+                                child: Material(
+                                  elevation: 2,
                                   borderRadius: BorderRadius.circular(16),
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.article,
-                                      arguments: {
-                                        'id': article.id,
-                                        'title': article.title ?? article.sectionTitle ?? 'Article',
-                                        'content': article.bodyText ?? '',
-                                      },
-                                    );
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(18),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.shade50,
-                                            borderRadius: BorderRadius.circular(12),
+                                  color: Colors.white,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(16),
+                                    onTap: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        AppRoutes.article,
+                                        arguments: {
+                                          'id': article.id,
+                                          'title':
+                                              article.title ??
+                                              article.sectionTitle ??
+                                              'Article',
+                                          'content': article.bodyText ?? '',
+                                        },
+                                      );
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Icon(
+                                              Icons.article_outlined,
+                                              color: Colors.green.shade700,
+                                            ),
                                           ),
-                                          child: Icon(
-                                            Icons.article_outlined,
-                                            color: Colors.green.shade700,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                article.title ?? article.sectionTitle ?? 'Article',
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              if (article.subSectionTitle != null && article.subSectionTitle!.isNotEmpty)
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
                                                 Text(
-                                                  article.subSectionTitle!,
-                                                  style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                  article.title ??
+                                                      article.sectionTitle ??
+                                                      'Article',
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
-                                            ],
+                                                if (article.subSectionTitle !=
+                                                        null &&
+                                                    article
+                                                        .subSectionTitle!
+                                                        .isNotEmpty)
+                                                  Text(
+                                                    article.subSectionTitle!,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.black54,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            )),
+                            ),
                             const SizedBox(height: 8),
                           ],
                         );
@@ -155,7 +190,8 @@ class HandbookMainPage extends StatelessWidget {
               );
             }(),
             bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 0),
-            floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.endDocked,
             floatingActionButton: Padding(
               padding: const EdgeInsets.only(bottom: 50.0, right: 4.0),
               child: FloatingActionButton(
@@ -164,7 +200,11 @@ class HandbookMainPage extends StatelessWidget {
                 },
                 backgroundColor: Colors.green.shade700,
                 shape: const CircleBorder(),
-                child: const Icon(Icons.chat_bubble, color: Colors.white, size: 32),
+                child: const Icon(
+                  Icons.chat_bubble,
+                  color: Colors.white,
+                  size: 32,
+                ),
                 tooltip: 'Chatbot',
               ),
             ),
