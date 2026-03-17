@@ -1,0 +1,14 @@
+import * as icons from '@hugeicons/core-free-icons';
+const keys = Object.keys(icons).filter(k => !k.endsWith('FreeIcons'));
+const r = (p) => keys.filter(k => new RegExp(p, 'i').test(k));
+console.log('BOOK:', r('^book').slice(0,8).join(', '));
+console.log('PEOPLE:', r('people|^users').slice(0,8).join(', '));
+console.log('DASHBOARD:', r('dashboard').slice(0,10).join(', '));
+console.log('CLOCK:', r('^clock').slice(0,8).join(', '));
+console.log('TIME:', r('^time').slice(0,5).join(', '));
+console.log('TREND:', r('^trend').join(', '));
+console.log('LOGOUT2:', r('logout|signout').slice(0,5).join(', '));
+console.log('CHEVRON_UP:', r('chevronup|chevron_up|chevronUp').slice(0,5).join(', '));
+console.log('CHEVRON2:', r('chevron').slice(0,10).join(', '));
+console.log('USER2:', r('^user0').slice(0,5).join(', '));
+console.log('ALERT:', r('^alert0').slice(0,5).join(', '));
