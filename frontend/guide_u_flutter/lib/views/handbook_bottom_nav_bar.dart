@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import '../routes/app_routes.dart';
-import 'handbook_main_page.dart';
-import 'handbook_saved_articles_page.dart';
-import 'handbook_search_screen.dart';
 
 class HandbookBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -14,37 +11,20 @@ class HandbookBottomNavBar extends StatelessWidget {
 
   void _onItemTapped(BuildContext context, int index) {
     if (index == currentIndex) return;
-
-    String route = AppRoutes.main;
     switch (index) {
-      case 1:
-        route = AppRoutes.saved;
+      case 0: // Home
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.main, (route) => false);
         break;
-      case 2:
-        route = AppRoutes.search;
+      case 1: // Lost (Placeholder 1)
+        Navigator.pushNamedAndRemoveUntil(context, '/lost', (route) => false);
         break;
-      default:
-        route = AppRoutes.main;
+      case 2: // Incident (Placeholder 2)
+        Navigator.pushNamedAndRemoveUntil(context, '/incident', (route) => false);
+        break;
+      case 3: // Search
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.search, (route) => false);
+        break;
     }
-
-    Navigator.of(context).pushAndRemoveUntil(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          switch (route) {
-            case AppRoutes.saved:
-              return const HandbookSavedArticlesPage();
-            case AppRoutes.search:
-              return const HandbookSearchScreen();
-            case AppRoutes.main:
-            default:
-              return const HandbookMainPage();
-          }
-        },
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-      ),
-      (route) => false,
-    );
   }
 
   @override
@@ -63,13 +43,16 @@ class HandbookBottomNavBar extends StatelessWidget {
           label: "Home",
         ),
         NavigationDestination(
-          icon: Icon(Icons.search),
-          label: "Search",
+          icon: Icon(Icons.circle_outlined),
+          label: "Lost",
         ),
         NavigationDestination(
-          icon: Icon(Icons.bookmark_border),
-          selectedIcon: Icon(Icons.bookmark),
-          label: "Saved",
+          icon: Icon(Icons.circle_outlined),
+          label: "Incident",
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.search),
+          label: "Search",
         ),
       ],
     );
