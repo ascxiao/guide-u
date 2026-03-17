@@ -220,10 +220,10 @@ export default async function HandbookPage({
 							<TableHeader>
 								<TableRow>
 									<TableHead className="pl-6">Title</TableHead>
-									<TableHead>Chapter</TableHead>
-									<TableHead>Section</TableHead>
-									<TableHead>Type</TableHead>
-									<TableHead>Page</TableHead>
+									<TableHead>Chapters</TableHead>
+									<TableHead>Sections</TableHead>
+									<TableHead>Types</TableHead>
+									<TableHead>Pages</TableHead>
 									<TableHead className="pr-6 text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
