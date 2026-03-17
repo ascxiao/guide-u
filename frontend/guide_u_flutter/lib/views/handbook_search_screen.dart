@@ -65,7 +65,7 @@ class _HandbookSearchScreenState extends State<HandbookSearchScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 2),
+      bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 3),
     );
   }
 }
