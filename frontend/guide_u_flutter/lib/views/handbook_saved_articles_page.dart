@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../view_models/saved_articles_view_model.dart';
+import '../services/local_cache_service.dart';
 // Removed unused import
   /// Title case with abbreviation support (copied from main page)
   String titleCaseWithAbbr(String text) {
@@ -41,22 +43,27 @@ class HandbookSavedArticlesPage extends StatefulWidget {
 
 class _HandbookSavedArticlesPageState
     extends State<HandbookSavedArticlesPage> {
+  final LocalCacheService _cacheService = LocalCacheService();
 
   @override
   void initState() {
     super.initState();
 
-    final savedVM =
-        Provider.of<SavedArticlesViewModel>(context, listen: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
 
-    final userId =
-        Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
+      final savedVM =
+          Provider.of<SavedArticlesViewModel>(context, listen: false);
 
-    if (userId.isNotEmpty &&
-        savedVM.savedArticles.isEmpty &&
-        !savedVM.loading) {
-      savedVM.fetchSavedArticles(userId);
-    }
+      final userId =
+          Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
+
+      if (userId.isNotEmpty &&
+          savedVM.savedArticles.isEmpty &&
+          !savedVM.loading) {
+        savedVM.fetchSavedArticles(userId);
+      }
+    });
   }
 
   @override
@@ -87,19 +94,7 @@ class _HandbookSavedArticlesPageState
                         }
 
                         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          final savedIds = savedVM.savedArticles.map((s) => s.articleId).toList();
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text('No articles found.'),
-                                const SizedBox(height: 12),
-                                Text('Saved IDs: $savedIds'),
-                                const SizedBox(height: 12),
-                                Text('Fetched articles: ${snapshot.data}'),
-                              ],
-                            ),
-                          );
+                          return const Center(child: Text('No articles found.'));
                         }
 
                         final articles = snapshot.data!;
@@ -128,7 +123,6 @@ class _HandbookSavedArticlesPageState
                                 final savedVM = Provider.of<SavedArticlesViewModel>(context, listen: false);
                                 final userId = Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
                                 await savedVM.fetchSavedArticles(userId);
-                                setState(() {});
                               },
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 10, left: 12, right: 12),
@@ -198,8 +192,6 @@ class _HandbookSavedArticlesPageState
   /// 🔹 FIXED: moved OUTSIDE build()
   Future<List<Map<String, dynamic>>> _fetchArticlesForSaved(
       List savedArticles) async {
-    final supabase = Supabase.instance.client;
-
     final articleIds = savedArticles
         .map((s) => s.articleId)
         .whereType<String>()
@@ -207,11 +199,44 @@ class _HandbookSavedArticlesPageState
 
     if (articleIds.isEmpty) return [];
 
-    final response = await supabase
-      .from('articles')
-      .select()
-      .filter('id', 'in', articleIds);
+    final cachedArticles = await _cacheService.getCachedArticles();
+    final cachedById = {
+      for (final article in cachedArticles) article.id: article.toJson(),
+    };
 
-    return List<Map<String, dynamic>>.from(response as List);
+    bool online = true;
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult is ConnectivityResult) {
+      online = connectivityResult != ConnectivityResult.none;
+    } else if (connectivityResult is List<ConnectivityResult>) {
+      online = connectivityResult.any((entry) => entry != ConnectivityResult.none);
+    }
+
+    if (online) {
+      try {
+        final response = await Supabase.instance.client
+            .from('articles')
+            .select()
+            .filter('id', 'in', articleIds)
+            .timeout(const Duration(seconds: 8));
+
+        final serverArticles = List<Map<String, dynamic>>.from(response as List);
+
+        // Keep card rendering stable by preserving saved order.
+        final serverById = {
+          for (final article in serverArticles) article['id']?.toString(): article,
+        };
+
+        return articleIds
+            .map((id) => serverById[id] ?? cachedById[id] ?? {'id': id, 'title': 'Article', 'body_text': ''})
+            .toList();
+      } catch (_) {
+        // Fall back to local cache below.
+      }
+    }
+
+    return articleIds
+        .map((id) => cachedById[id] ?? {'id': id, 'title': 'Article', 'body_text': ''})
+        .toList();
   }
 }
