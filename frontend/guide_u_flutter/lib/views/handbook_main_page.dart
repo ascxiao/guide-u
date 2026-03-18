@@ -1,13 +1,63 @@
 import 'package:flutter/material.dart';
 import '../routes/app_routes.dart';
 import 'handbook_bottom_nav_bar.dart';
-// ...existing code...
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../view_models/handbook_main_view_model.dart';
 
-class HandbookMainPage extends StatelessWidget {
+class HandbookMainPage extends StatefulWidget {
   const HandbookMainPage({Key? key}) : super(key: key);
+
+  @override
+  State<HandbookMainPage> createState() => _HandbookMainPageState();
+}
+
+class _HandbookMainPageState extends State<HandbookMainPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// 🔹 Helper: Title case but retain abbreviations in parentheses
+  String titleCaseWithAbbr(String text) {
+    if (text.isEmpty) return text;
+
+    final regex = RegExp(r'\([^\)]+\)');
+    final matches = regex.allMatches(text).toList();
+
+    // Replace abbreviations with placeholders
+    var modified = text;
+    for (int i = 0; i < matches.length; i++) {
+      modified = modified.replaceFirst(matches[i].group(0)!, '<<$i>>');
+    }
+
+    // Title-case the rest
+    modified = modified.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      if (word.startsWith('<<') && word.endsWith('>>')) return word; // skip placeholders
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+
+    // Restore abbreviations
+    for (int i = 0; i < matches.length; i++) {
+      modified = modified.replaceFirst('<<$i>>', matches[i].group(0)!);
+    }
+
+    return modified;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,200 +66,327 @@ class HandbookMainPage extends StatelessWidget {
       child: Consumer<HandbookMainViewModel>(
         builder: (context, viewModel, _) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text(
-                'GuideU',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  tooltip: 'Sign Out',
-                  color: const Color(0xFF006633),
-                  onPressed: () async {
-                    await Supabase.instance.client.auth.signOut();
-                  },
+            backgroundColor: const Color.fromARGB(255, 245, 244, 244),
+            extendBody: true,
+
+            /// 🔹 APP BAR
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(75),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF00A86B),
+                      Color(0xFF006633),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.bookmark_border),
-                  tooltip: 'Saved',
-                  color: const Color(0xFF006633),
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.saved);
-                  },
-                ),
-              ],
-              elevation: 0,
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF006633),
-            ),
-            body: () {
-              if (viewModel.loading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (viewModel.error != null) {
-                return Center(child: Text('Error: \\${viewModel.error}'));
-              }
-              final grouped = viewModel.groupedArticles;
-              if (grouped.isEmpty) {
-                return const Center(child: Text('No articles found.'));
-              }
-              return ListView(
-                padding: const EdgeInsets.all(20),
-                children: grouped.entries.map((chapterEntry) {
-                  final chapterTitle = chapterEntry.key;
-                  final sections = chapterEntry.value;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Text(
-                          chapterTitle,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                child: AppBar(
+                  automaticallyImplyLeading: false,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  title: const Text(
+                    'GuideU',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                  actions: [
+                    /// BOOKMARK
+                    IconButton(
+                      icon: ShaderMask(
+                        shaderCallback: (Rect bounds) {
+                          return const LinearGradient(
+                            colors: [Color(0xFFFFFFFF), Color(0xFFFFF176)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ).createShader(bounds);
+                        },
+                        child: const Icon(Icons.bookmark, color: Colors.white),
+                      ),
+                      tooltip: 'Saved',
+                      onPressed: () {
+                        Navigator.pushNamed(context, AppRoutes.saved);
+                      },
+                    ),
+                    const SizedBox(width: 6),
+
+                    /// PROFILE
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, AppRoutes.profile);
+                        },
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Colors.white,
+                          child: const Icon(
+                            Icons.person,
+                            color: Color(0xFF006633),
+                            size: 22,
                           ),
                         ),
                       ),
-                      ...sections.entries.map((sectionEntry) {
-                        final articles = sectionEntry.value;
-                        // Use the sectionId from the first article in the group, fallback to the key if needed
-                        final sectionId =
-                            (articles.isNotEmpty &&
-                                articles.first.sectionId != null &&
-                                articles.first.sectionId!.isNotEmpty)
-                            ? articles.first.sectionId!
-                            : sectionEntry.key;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                left: 8,
-                                bottom: 6,
-                              ),
-                              child: Text(
-                                'Section $sectionId',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ),
-                            ...articles.map(
-                              (article) => Container(
-                                margin: const EdgeInsets.only(
-                                  bottom: 12,
-                                  left: 8,
-                                  right: 8,
-                                ),
-                                child: Material(
-                                  elevation: 2,
-                                  borderRadius: BorderRadius.circular(16),
-                                  color: Colors.white,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(16),
-                                    onTap: () {
-                                      Navigator.pushNamed(
-                                        context,
-                                        AppRoutes.article,
-                                        arguments: {
-                                          'id': article.id,
-                                          'title':
-                                              article.title ??
-                                              article.sectionTitle ??
-                                              'Article',
-                                          'content': article.bodyText ?? '',
-                                        },
-                                      );
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(18),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: Colors.green.shade50,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: Icon(
-                                              Icons.article_outlined,
-                                              color: Colors.green.shade700,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  article.title ??
-                                                      article.sectionTitle ??
-                                                      'Article',
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                if (article.subSectionTitle !=
-                                                        null &&
-                                                    article
-                                                        .subSectionTitle!
-                                                        .isNotEmpty)
-                                                  Text(
-                                                    article.subSectionTitle!,
-                                                    style: const TextStyle(
-                                                      fontSize: 14,
-                                                      color: Colors.black54,
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                        );
-                      }).toList(),
-                      const SizedBox(height: 24),
-                    ],
-                  );
-                }).toList(),
-              );
-            }(),
-            bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 0),
-            floatingActionButtonLocation:
-                FloatingActionButtonLocation.endDocked,
-            floatingActionButton: Padding(
-              padding: const EdgeInsets.only(bottom: 50.0, right: 4.0),
-              child: FloatingActionButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.chatbot);
-                },
-                backgroundColor: Colors.green.shade700,
-                shape: const CircleBorder(),
-                child: const Icon(
-                  Icons.chat_bubble,
-                  color: Colors.white,
-                  size: 32,
+                    ),
+                  ],
                 ),
-                tooltip: 'Chatbot',
               ),
             ),
+
+            body: _buildBody(context, viewModel),
+            bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 0),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, HandbookMainViewModel viewModel) {
+    if (viewModel.loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (viewModel.error != null) {
+      return Center(
+        child: Text(
+          'Error: ${viewModel.error}',
+          style: const TextStyle(color: Colors.redAccent),
+        ),
+      );
+    }
+
+    final grouped = viewModel.groupedArticles;
+
+    if (grouped.isEmpty) {
+      return const Center(child: Text('No articles found.'));
+    }
+
+    return FadeTransition(
+      opacity: _controller,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.05),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut)),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          children: [
+            /// HEADER
+            FadeTransition(
+              opacity: _controller,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, -0.1),
+                  end: Offset.zero,
+                ).animate(_controller),
+                child: Container(
+                  height: 180,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/images/usls_header.jpg'),
+                      fit: BoxFit.cover,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: 0),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.black.withOpacity(0.55),
+                          Colors.black.withOpacity(0.2),
+                        ],
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
+                      ),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          "Welcome to GuideU",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          "University of St. La Salle Handbook",
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// CONTENT
+            ...grouped.entries.map((chapterEntry) {
+              final chapterTitle = chapterEntry.key;
+              final sections = chapterEntry.value;
+              final chapterId = (sections.values.first.isNotEmpty &&
+                      sections.values.first.first.chapterId != null)
+                  ? sections.values.first.first.chapterId
+                  : '';
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Chapter title
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      'Chapter ${(chapterId != null && chapterId.toString().isNotEmpty) ? chapterId.toString() + ' - ' : ''}${titleCaseWithAbbr(chapterTitle)}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  // Sections
+                  ...sections.entries.map((sectionEntry) {
+                    final articles = sectionEntry.value;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6, bottom: 6),
+                          child: Text(
+                            'Section ${(articles.isNotEmpty && articles.first.sectionId != null && articles.first.sectionId.toString().isNotEmpty) ? articles.first.sectionId : sectionEntry.key}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+
+                        // Articles
+                        ...articles.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final article = entry.value;
+
+                          final animation = Tween<double>(begin: 0, end: 1).animate(
+                            CurvedAnimation(
+                              parent: _controller,
+                              curve: Interval(
+                                (index * 0.05).clamp(0.0, 1.0),
+                                1.0,
+                                curve: Curves.easeOut,
+                              ),
+                            ),
+                          );
+
+                          return AnimatedBuilder(
+                            animation: animation,
+                            builder: (context, child) {
+                              return Opacity(
+                                opacity: animation.value,
+                                child: Transform.translate(
+                                  offset: Offset(0, 20 * (1 - animation.value)),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: _buildAnimatedCard(context, article),
+                          );
+                        }),
+
+                        const SizedBox(height: 10),
+                      ],
+                    );
+                  }),
+
+                  const SizedBox(height: 20),
+                ],
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedCard(BuildContext context, dynamic article) {
+    String displayTitle = (article.subSectionTitle != null &&
+            article.subSectionTitle != 'N/A')
+        ? article.subSectionTitle
+        : (article.title ?? article.sectionTitle ?? 'Article');
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.article,
+          arguments: {
+            'id': article.id,
+            'title': titleCaseWithAbbr(displayTitle),
+            'content': article.bodyText ?? '',
+          },
+        );
+      },
+      child: AnimatedScale(
+        scale: 1,
+        duration: const Duration(milliseconds: 150),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white, // matches article card vibe
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF006633).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.article_outlined,
+                  color: Color(0xFF006633),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  titleCaseWithAbbr(displayTitle),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            ],
+          ),
+        ),
       ),
     );
   }

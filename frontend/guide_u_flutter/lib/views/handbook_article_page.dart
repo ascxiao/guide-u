@@ -1,9 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../view_models/saved_articles_view_model.dart';
-
 
 class HandbookArticlePage extends StatefulWidget {
   final String articleTitle;
@@ -28,7 +26,9 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final savedArticlesVM = Provider.of<SavedArticlesViewModel>(context, listen: false);
+    final savedArticlesVM =
+        Provider.of<SavedArticlesViewModel>(context, listen: false);
+
     if (widget.articleId != null) {
       _isSaved = savedArticlesVM.isArticleSaved(widget.articleId!);
     }
@@ -36,20 +36,80 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
 
   Future<void> _toggleBookmark() async {
     if (widget.articleId == null) return;
+
     setState(() => _loading = true);
-    final savedArticlesVM = Provider.of<SavedArticlesViewModel>(context, listen: false);
-    // Use a default user id since there is no login system
-    final userId = Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
+
+    final savedArticlesVM =
+        Provider.of<SavedArticlesViewModel>(context, listen: false);
+
+    final userId =
+        Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
+
     if (_isSaved) {
       await savedArticlesVM.removeSavedArticle(userId, widget.articleId!);
     } else {
       await savedArticlesVM.addSavedArticle(userId, widget.articleId!);
     }
+
     setState(() {
       _isSaved = !_isSaved;
       _loading = false;
     });
   }
+
+ Widget _buildFormattedContent(String content) {
+  // Normalize line breaks just in case
+  content = content
+      .replaceAll(r'\n', ' ')
+      .replaceAll('\r\n', ' ')
+      .trim();
+
+  // Split into sentences
+  final sentences = content.split(RegExp(r'(?<=[.?!])\s+'));
+
+  // Group sentences into paragraphs (2–3 sentences per paragraph)
+  List<String> paragraphs = [];
+  String buffer = '';
+
+  for (int i = 0; i < sentences.length; i++) {
+    buffer += sentences[i] + ' ';
+
+    // Every 3 sentences → new paragraph
+    if ((i + 1) % 3 == 0 || i == sentences.length - 1) {
+      paragraphs.add(buffer.trim());
+      buffer = '';
+    }
+  }
+
+  // Build UI
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final para in paragraphs)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 20), // space between paragraphs
+          child: RichText(
+            textAlign: TextAlign.justify,
+            text: TextSpan(
+              children: [
+                const WidgetSpan(
+                  child: SizedBox(width: 24),
+                ),
+                TextSpan(
+                  text: para,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.8,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+    ],
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +123,8 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
         title: LayoutBuilder(
           builder: (context, constraints) {
             return ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: constraints.maxWidth - 56), // 56 for actions
+              constraints:
+                  BoxConstraints(maxWidth: constraints.maxWidth - 56),
               child: Text(
                 widget.articleTitle,
                 style: const TextStyle(
@@ -72,7 +133,6 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                softWrap: true,
               ),
             );
           },
@@ -85,8 +145,13 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
                     height: 24,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Icon(_isSaved ? Icons.bookmark : Icons.bookmark_border),
-            tooltip: _isSaved ? 'Remove Bookmark' : 'Save Article',
+                : Icon(
+                    _isSaved
+                        ? Icons.bookmark
+                        : Icons.bookmark_border,
+                  ),
+            tooltip:
+                _isSaved ? 'Remove Bookmark' : 'Save Article',
             color: const Color(0xFF006633),
             onPressed: _loading ? null : _toggleBookmark,
           ),
@@ -107,14 +172,7 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
               ),
             ],
           ),
-          child: Text(
-            widget.articleContent,
-            style: const TextStyle(
-              fontSize: 16,
-              height: 1.7,
-              color: Colors.black87,
-            ),
-          ),
+          child: _buildFormattedContent(widget.articleContent),
         ),
       ),
     );
