@@ -6,6 +6,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/handbook_article.dart';
 
 class HandbookSearchViewModel extends ChangeNotifier {
+    // Add TextEditingController for search bar
+    final TextEditingController controller = TextEditingController();
+
+    // Add clearSearch method
+    void clearSearch() {
+      controller.clear();
+      updateQuery('');
+    }
   static const Duration _debounceDuration = Duration(milliseconds: 350);
 
   final SupabaseClient _supabase = Supabase.instance.client;
