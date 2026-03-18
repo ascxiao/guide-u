@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'handbook_bottom_nav_bar.dart';
+import '../widgets/internet_required_notice.dart';
 
 class HandbookIncidentPage extends StatelessWidget {
   const HandbookIncidentPage({Key? key}) : super(key: key);
@@ -24,6 +25,8 @@ class HandbookIncidentPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const InternetRequiredNotice(featureName: 'Incident reporting'),
+
           // Instructions / Header
           Container(
             padding: const EdgeInsets.all(20),
@@ -57,10 +60,7 @@ class HandbookIncidentPage extends StatelessWidget {
                 SizedBox(height: 8),
                 Text(
                   'Fill out the details below so that the incident can be properly addressed.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -69,7 +69,9 @@ class HandbookIncidentPage extends StatelessWidget {
           // Reporter Info
           Card(
             margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -78,7 +80,11 @@ class HandbookIncidentPage extends StatelessWidget {
                 children: const [
                   Text(
                     'Your Information',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF006633)),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF006633),
+                    ),
                   ),
                   SizedBox(height: 12),
                   TextField(
@@ -109,7 +115,9 @@ class HandbookIncidentPage extends StatelessWidget {
           // Incident Details
           Card(
             margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -118,14 +126,21 @@ class HandbookIncidentPage extends StatelessWidget {
                 children: [
                   const Text(
                     'Incident Details',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF006633)),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF006633),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   const TextField(
                     decoration: InputDecoration(
                       labelText: 'Date & Time',
                       border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.calendar_today, color: Color(0xFF006633)),
+                      suffixIcon: Icon(
+                        Icons.calendar_today,
+                        color: Color(0xFF006633),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -151,10 +166,22 @@ class HandbookIncidentPage extends StatelessWidget {
                     ),
                     items: const [
                       DropdownMenuItem(value: 'Safety', child: Text('Safety')),
-                      DropdownMenuItem(value: 'Security', child: Text('Security')),
-                      DropdownMenuItem(value: 'Harassment', child: Text('Harassment')),
-                      DropdownMenuItem(value: 'Property Damage', child: Text('Property Damage')),
-                      DropdownMenuItem(value: 'IT/Network', child: Text('IT/Network')),
+                      DropdownMenuItem(
+                        value: 'Security',
+                        child: Text('Security'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Harassment',
+                        child: Text('Harassment'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Property Damage',
+                        child: Text('Property Damage'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'IT/Network',
+                        child: Text('IT/Network'),
+                      ),
                       DropdownMenuItem(value: 'Other', child: Text('Other')),
                     ],
                     onChanged: (value) {},
@@ -167,9 +194,15 @@ class HandbookIncidentPage extends StatelessWidget {
                     ),
                     items: const [
                       DropdownMenuItem(value: 'Minor', child: Text('Minor')),
-                      DropdownMenuItem(value: 'Moderate', child: Text('Moderate')),
+                      DropdownMenuItem(
+                        value: 'Moderate',
+                        child: Text('Moderate'),
+                      ),
                       DropdownMenuItem(value: 'Major', child: Text('Major')),
-                      DropdownMenuItem(value: 'Critical', child: Text('Critical')),
+                      DropdownMenuItem(
+                        value: 'Critical',
+                        child: Text('Critical'),
+                      ),
                     ],
                     onChanged: (value) {},
                   ),
@@ -183,12 +216,18 @@ class HandbookIncidentPage extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF006633),
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
             onPressed: () {},
             child: const Text(
               'Submit Report',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(height: 24),

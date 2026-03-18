@@ -6,7 +6,7 @@ import '../view_models/handbook_search_view_model.dart';
 import 'handbook_bottom_nav_bar.dart';
 
 class HandbookSearchScreen extends StatelessWidget {
-const HandbookSearchScreen({Key? key}) : super(key: key);
+  const HandbookSearchScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -62,15 +62,12 @@ const HandbookSearchScreen({Key? key}) : super(key: key);
                     const SizedBox(height: 16),
 
                     // 🔹 SEARCH RESULTS
-                    Expanded(
-                      child: _SearchResults(viewModel: viewModel),
-                    ),
+                    Expanded(child: _SearchResults(viewModel: viewModel)),
                   ],
                 ),
               ),
             ),
-            bottomNavigationBar:
-                const HandbookBottomNavBar(currentIndex: 4),
+            bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 4),
           );
         },
       ),
