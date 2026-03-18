@@ -8,6 +8,7 @@ import '../views/handbook_chatbot.dart';
 import '../views/handbook_incident_page.dart';
 import '../views/handbook_lost_and_found_page.dart';
 import '../views/login_screen.dart';
+import '../views/profile_screen.dart';
 
 class AppRoutes {
   static const String main = '/';
@@ -18,6 +19,7 @@ class AppRoutes {
   static const String chatbot = '/chatbot';
   static const String incident = '/incident';
   static const String lostAndFound = '/lost';
+  static const String profile = '/profile';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final hasSession = Supabase.instance.client.auth.currentSession != null;
@@ -64,6 +66,10 @@ class AppRoutes {
       case lostAndFound:
         return MaterialPageRoute(
           builder: (_) => const HandbookLostAndFoundPage(),
+        );
+      case profile:
+        return MaterialPageRoute(
+          builder: (_) => const ProfileScreen(),
         );
       default:
         return null;

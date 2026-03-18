@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../routes/app_routes.dart';
 import 'handbook_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../view_models/handbook_main_view_model.dart';
 
 class HandbookMainPage extends StatefulWidget {
@@ -19,12 +18,10 @@ class _HandbookMainPageState extends State<HandbookMainPage>
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
-
     _controller.forward();
   }
 
@@ -34,107 +31,120 @@ class _HandbookMainPageState extends State<HandbookMainPage>
     super.dispose();
   }
 
-@override
-Widget build(BuildContext context) {
-  return ChangeNotifierProvider(
-    create: (_) => HandbookMainViewModel(),
-    child: Consumer<HandbookMainViewModel>(
-      builder: (context, viewModel, _) {
-        return Scaffold(
-          backgroundColor: const Color.fromARGB(255, 245, 244, 244),
-          extendBody: true,
+  /// 🔹 Helper: Title case but retain abbreviations in parentheses
+  String titleCaseWithAbbr(String text) {
+    if (text.isEmpty) return text;
 
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(75),
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF00A86B),
-                    Color(0xFF006633),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: AppBar(
-                automaticallyImplyLeading: false,
-                backgroundColor: Colors.transparent,
-                elevation: 0,
+    final regex = RegExp(r'\([^\)]+\)');
+    final matches = regex.allMatches(text).toList();
 
-                /// 🔹 TITLE
-                title: const Text(
-                  'GuideU',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: Colors.white,
+    // Replace abbreviations with placeholders
+    var modified = text;
+    for (int i = 0; i < matches.length; i++) {
+      modified = modified.replaceFirst(matches[i].group(0)!, '<<$i>>');
+    }
+
+    // Title-case the rest
+    modified = modified.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      if (word.startsWith('<<') && word.endsWith('>>')) return word; // skip placeholders
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+
+    // Restore abbreviations
+    for (int i = 0; i < matches.length; i++) {
+      modified = modified.replaceFirst('<<$i>>', matches[i].group(0)!);
+    }
+
+    return modified;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => HandbookMainViewModel(),
+      child: Consumer<HandbookMainViewModel>(
+        builder: (context, viewModel, _) {
+          return Scaffold(
+            backgroundColor: const Color.fromARGB(255, 245, 244, 244),
+            extendBody: true,
+
+            /// 🔹 APP BAR
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(75),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF00A86B),
+                      Color(0xFF006633),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-
-                /// 🔹 ACTIONS (MERGED CLEANLY)
-                actions: [
-                  /// 🚪 LOGOUT (from your partner)
-                  IconButton(
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    tooltip: 'Sign Out',
-                    onPressed: () async {
-                      await Supabase.instance.client.auth.signOut();
-                    },
+                child: AppBar(
+                  automaticallyImplyLeading: false,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  title: const Text(
+                    'GuideU',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
                   ),
-
-                  /// 🔖 BOOKMARK (your styled version)
-                  IconButton(
-                    icon: ShaderMask(
-                      shaderCallback: (Rect bounds) {
-                        return const LinearGradient(
-                          colors: [
-                            Color(0xFFFFFFFF),
-                            Color(0xFFFFF176),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds);
+                  actions: [
+                    /// BOOKMARK
+                    IconButton(
+                      icon: ShaderMask(
+                        shaderCallback: (Rect bounds) {
+                          return const LinearGradient(
+                            colors: [Color(0xFFFFFFFF), Color(0xFFFFF176)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ).createShader(bounds);
+                        },
+                        child: const Icon(Icons.bookmark, color: Colors.white),
+                      ),
+                      tooltip: 'Saved',
+                      onPressed: () {
+                        Navigator.pushNamed(context, AppRoutes.saved);
                       },
-                      child: const Icon(
-                        Icons.bookmark,
-                        color: Colors.white,
+                    ),
+                    const SizedBox(width: 6),
+
+                    /// PROFILE
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, AppRoutes.profile);
+                        },
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Colors.white,
+                          child: const Icon(
+                            Icons.person,
+                            color: Color(0xFF006633),
+                            size: 22,
+                          ),
+                        ),
                       ),
                     ),
-                    tooltip: 'Saved',
-                    onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.saved);
-                    },
-                  ),
-
-                  const SizedBox(width: 6),
-
-                  /// 👤 PROFILE
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Colors.white,
-                      child: const Icon(
-                        Icons.person,
-                        color: Color(0xFF006633),
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-          body: _buildBody(context, viewModel),
-          bottomNavigationBar:
-              const HandbookBottomNavBar(currentIndex: 0),
-        );
-      },
-    ),
-  );
-}
+            body: _buildBody(context, viewModel),
+            bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 0),
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildBody(BuildContext context, HandbookMainViewModel viewModel) {
     if (viewModel.loading) {
@@ -166,7 +176,7 @@ Widget build(BuildContext context) {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           children: [
-            /// 🔥 HEADER
+            /// HEADER
             FadeTransition(
               opacity: _controller,
               child: SlideTransition(
@@ -175,7 +185,6 @@ Widget build(BuildContext context) {
                   end: Offset.zero,
                 ).animate(_controller),
                 child: Container(
-                  // Remove margin, use same horizontal as cards (16)
                   height: 180,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
@@ -191,7 +200,6 @@ Widget build(BuildContext context) {
                       ),
                     ],
                   ),
-                  // Match ListView horizontal padding
                   margin: const EdgeInsets.symmetric(horizontal: 0),
                   child: Container(
                     padding: const EdgeInsets.all(20),
@@ -232,19 +240,23 @@ Widget build(BuildContext context) {
 
             const SizedBox(height: 20),
 
-            /// 📚 CONTENT
+            /// CONTENT
             ...grouped.entries.map((chapterEntry) {
               final chapterTitle = chapterEntry.key;
               final sections = chapterEntry.value;
+              final chapterId = (sections.values.first.isNotEmpty &&
+                      sections.values.first.first.chapterId != null)
+                  ? sections.values.first.first.chapterId
+                  : '';
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// CHAPTER TITLE
+                  // Chapter title
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Text(
-                      chapterTitle,
+                      'Chapter ${(chapterId != null && chapterId.toString().isNotEmpty) ? chapterId.toString() + ' - ' : ''}${titleCaseWithAbbr(chapterTitle)}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -252,7 +264,7 @@ Widget build(BuildContext context) {
                     ),
                   ),
 
-                  /// SECTIONS
+                  // Sections
                   ...sections.entries.map((sectionEntry) {
                     final articles = sectionEntry.value;
 
@@ -262,8 +274,7 @@ Widget build(BuildContext context) {
                         Padding(
                           padding: const EdgeInsets.only(left: 6, bottom: 6),
                           child: Text(
-                            'Section '
-                            '${(articles.isNotEmpty && articles.first.sectionId != null && articles.first.sectionId.toString().isNotEmpty) ? articles.first.sectionId : sectionEntry.key}',
+                            'Section ${(articles.isNotEmpty && articles.first.sectionId != null && articles.first.sectionId.toString().isNotEmpty) ? articles.first.sectionId : sectionEntry.key}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.grey,
@@ -271,22 +282,21 @@ Widget build(BuildContext context) {
                           ),
                         ),
 
-                        /// ARTICLES WITH STAGGER ANIMATION
+                        // Articles
                         ...articles.asMap().entries.map((entry) {
                           final index = entry.key;
                           final article = entry.value;
 
-                          final animation = Tween<double>(begin: 0, end: 1)
-                              .animate(
-                                CurvedAnimation(
-                                  parent: _controller,
-                                  curve: Interval(
-                                    (index * 0.05).clamp(0.0, 1.0),
-                                    1.0,
-                                    curve: Curves.easeOut,
-                                  ),
-                                ),
-                              );
+                          final animation = Tween<double>(begin: 0, end: 1).animate(
+                            CurvedAnimation(
+                              parent: _controller,
+                              curve: Interval(
+                                (index * 0.05).clamp(0.0, 1.0),
+                                1.0,
+                                curve: Curves.easeOut,
+                              ),
+                            ),
+                          );
 
                           return AnimatedBuilder(
                             animation: animation,
@@ -319,6 +329,11 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildAnimatedCard(BuildContext context, dynamic article) {
+    String displayTitle = (article.subSectionTitle != null &&
+            article.subSectionTitle != 'N/A')
+        ? article.subSectionTitle
+        : (article.title ?? article.sectionTitle ?? 'Article');
+
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(
@@ -326,7 +341,7 @@ Widget build(BuildContext context) {
           AppRoutes.article,
           arguments: {
             'id': article.id,
-            'title': article.title ?? article.sectionTitle ?? 'Article',
+            'title': titleCaseWithAbbr(displayTitle),
             'content': article.bodyText ?? '',
           },
         );
@@ -338,7 +353,7 @@ Widget build(BuildContext context) {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.white, // matches article card vibe
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -364,7 +379,7 @@ Widget build(BuildContext context) {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  article.title ?? article.sectionTitle ?? 'Article',
+                  titleCaseWithAbbr(displayTitle),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
