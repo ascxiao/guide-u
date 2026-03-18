@@ -1,222 +1,189 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/handbook_article.dart';
+import '../routes/app_routes.dart';
+import '../view_models/handbook_search_view_model.dart';
 import 'handbook_bottom_nav_bar.dart';
 
-class HandbookSearchScreen extends StatefulWidget {
-  const HandbookSearchScreen({Key? key}) : super(key: key);
-
-  @override
-  State<HandbookSearchScreen> createState() =>
-      _HandbookSearchScreenState();
-}
-
-class _HandbookSearchScreenState
-    extends State<HandbookSearchScreen> {
-  String query = '';
-  List<String> searchResults = [];
-
-  final TextEditingController _controller =
-      TextEditingController();
-
-  void _onSearchChanged(String value) {
-    setState(() {
-      query = value;
-
-      searchResults = [
-        'Student Code of Conduct',
-        'Dress Code Policy',
-        'Attendance Rules',
-        'Grading System',
-        'Library Guidelines',
-      ]
-          .where((article) => article
-              .toLowerCase()
-              .contains(query.toLowerCase()))
-          .toList();
-    });
-  }
-
-  void _clearSearch() {
-    _controller.clear();
-    setState(() {
-      query = '';
-      searchResults = [];
-    });
-  }
+class HandbookSearchScreen extends StatelessWidget {
+const HandbookSearchScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      appBar: AppBar(
-        title: const Text(
-          'Search Handbook',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF006633),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            /// 🔍 SEARCH BAR
-            Padding(
-              padding:
-                  const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Row(
+    return ChangeNotifierProvider(
+      create: (_) => HandbookSearchViewModel(),
+      child: Consumer<HandbookSearchViewModel>(
+        builder: (context, viewModel, _) {
+          return Scaffold(
+            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+            appBar: AppBar(
+              title: const Text(
+                'Search Handbook',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF006633),
+            ),
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                   children: [
-                    const Icon(Icons.search,
-                        color: Colors.grey),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        onChanged: _onSearchChanged,
-                        decoration:
-                            const InputDecoration(
-                          hintText:
-                              'Search articles...',
-                          border: InputBorder.none,
-                        ),
+                    // 🔍 SEARCH BAR
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: viewModel.controller,
+                              onChanged: viewModel.updateQuery,
+                              decoration: const InputDecoration(
+                                hintText: 'Search articles...',
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                          if (viewModel.query.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: viewModel.clearSearch,
+                            ),
+                        ],
                       ),
                     ),
-                    if (query.isNotEmpty)
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: _clearSearch,
-                      ),
+                    const SizedBox(height: 16),
+
+                    // 🔹 SEARCH RESULTS
+                    Expanded(
+                      child: _SearchResults(viewModel: viewModel),
+                    ),
                   ],
                 ),
               ),
             ),
-
-            Expanded(
-              child: query.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "Start typing to search",
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
-                      ),
-                    )
-                  : searchResults.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "No results found",
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding:
-                              const EdgeInsets.symmetric(
-                                  horizontal: 12),
-                          itemCount:
-                              searchResults.length,
-                          itemBuilder:
-                              (context, index) {
-                            final item =
-                                searchResults[index];
-
-                            return Container(
-                              margin:
-                                  const EdgeInsets
-                                      .symmetric(
-                                          vertical: 6),
-                              decoration:
-                                  BoxDecoration(
-                                color: Colors.white,
-                                borderRadius:
-                                    BorderRadius
-                                        .circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black
-                                        .withOpacity(
-                                            0.04),
-                                    blurRadius: 8,
-                                    offset:
-                                        const Offset(
-                                            0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: ListTile(
-                                contentPadding:
-                                    const EdgeInsets
-                                        .symmetric(
-                                            horizontal:
-                                                16,
-                                            vertical:
-                                                8),
-                                leading: Container(
-                                  padding:
-                                      const EdgeInsets
-                                          .all(8),
-                                  decoration:
-                                      BoxDecoration(
-                                    color: const Color(
-                                            0xFF006633)
-                                        .withOpacity(
-                                            0.1),
-                                    borderRadius:
-                                        BorderRadius
-                                            .circular(
-                                                10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.article,
-                                    color: Color(
-                                        0xFF006633),
-                                  ),
-                                ),
-                                title: Text(
-                                  item,
-                                  style:
-                                      const TextStyle(
-                                    fontWeight:
-                                        FontWeight
-                                            .w600,
-                                  ),
-                                ),
-                                trailing:
-                                    const Icon(
-                                  Icons
-                                      .arrow_forward_ios,
-                                  size: 16,
-                                ),
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/article',
-                                    arguments: {
-                                      'title': item,
-                                      'content':
-                                          'Content for $item',
-                                    },
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-            ),
-          ],
-        ),
+            bottomNavigationBar:
+                const HandbookBottomNavBar(currentIndex: 4),
+          );
+        },
       ),
-      bottomNavigationBar:
-          const HandbookBottomNavBar(currentIndex: 4),
+    );
+  }
+}
+
+class _SearchResults extends StatelessWidget {
+  final HandbookSearchViewModel viewModel;
+
+  const _SearchResults({required this.viewModel});
+
+  @override
+  Widget build(BuildContext context) {
+    if (viewModel.query.trim().isEmpty) {
+      return const Center(
+        child: Text(
+          'Start typing to search handbook articles.',
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    if (viewModel.loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (viewModel.error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            'Failed to search articles.\n${viewModel.error}',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    if (viewModel.hasSearched && viewModel.results.isEmpty) {
+      return const Center(
+        child: Text('No matching articles found.', textAlign: TextAlign.center),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: viewModel.results.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final article = viewModel.results[index];
+        return Card(
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            title: Text(
+              article.title ?? article.sectionTitle ?? 'Article',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: _ArticleSubtitle(article: article),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.article,
+                arguments: {
+                  'id': article.id,
+                  'title': article.title ?? article.sectionTitle ?? 'Article',
+                  'content': article.bodyText ?? '',
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ArticleSubtitle extends StatelessWidget {
+  final HandbookArticle article;
+
+  const _ArticleSubtitle({required this.article});
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = <String>[
+      if (article.chapterTitle != null && article.chapterTitle!.isNotEmpty)
+        article.chapterTitle!,
+      if (article.sectionTitle != null && article.sectionTitle!.isNotEmpty)
+        article.sectionTitle!,
+      if (article.subSectionTitle != null &&
+          article.subSectionTitle!.isNotEmpty)
+        article.subSectionTitle!,
+    ];
+
+    final preview = article.bodyText?.replaceAll('\n', ' ').trim();
+    final previewText = (preview != null && preview.isNotEmpty)
+        ? preview
+        : 'Open to read the full article.';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (parts.isNotEmpty)
+          Text(parts.join(' • '), maxLines: 2, overflow: TextOverflow.ellipsis),
+        const SizedBox(height: 4),
+        Text(previewText, maxLines: 2, overflow: TextOverflow.ellipsis),
+      ],
     );
   }
 }

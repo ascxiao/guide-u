@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../routes/app_routes.dart';
 import 'handbook_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../view_models/handbook_main_view_model.dart';
 
 class HandbookMainPage extends StatefulWidget {
@@ -33,91 +34,107 @@ class _HandbookMainPageState extends State<HandbookMainPage>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => HandbookMainViewModel(),
-      child: Consumer<HandbookMainViewModel>(
-        builder: (context, viewModel, _) {
-          return Scaffold(
-            backgroundColor: const Color.fromARGB(255, 245, 244, 244),
-            extendBody: true,
-            appBar: PreferredSize(
-              preferredSize: const Size.fromHeight(75),
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF00A86B), Color(0xFF006633)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: AppBar(
-                  automaticallyImplyLeading: false,
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
+@override
+Widget build(BuildContext context) {
+  return ChangeNotifierProvider(
+    create: (_) => HandbookMainViewModel(),
+    child: Consumer<HandbookMainViewModel>(
+      builder: (context, viewModel, _) {
+        return Scaffold(
+          backgroundColor: const Color.fromARGB(255, 245, 244, 244),
+          extendBody: true,
 
-                  /// 🔹 TITLE
-                  title: const Text(
-                    'GuideU',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Colors.white,
-                    ),
-                  ),
-
-                  /// 🔹 ACTIONS (FIXED LAYOUT)
-                  actions: [
-                    /// 🔖 Bookmark (secondary action)
-                    IconButton(
-                      icon: ShaderMask(
-                        shaderCallback: (Rect bounds) {
-                          return const LinearGradient(
-                            colors: [
-                              Color.fromARGB(255, 255, 255, 255), // Gold
-                              Color(0xFFFFF176), // Light yellow
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ).createShader(bounds);
-                        },
-                        child: const Icon(
-                          Icons.bookmark,
-                          color: Colors.white,
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.saved);
-                      },
-                    ),
-
-                    const SizedBox(width: 6),
-
-                    /// 👤 Profile (primary, more visual weight)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Colors.white,
-                        child: const Icon(
-                          Icons.person,
-                          color: Color(0xFF006633),
-                          size: 22,
-                        ),
-                      ),
-                    ),
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(75),
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF00A86B),
+                    Color(0xFF006633),
                   ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
+              child: AppBar(
+                automaticallyImplyLeading: false,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+
+                /// 🔹 TITLE
+                title: const Text(
+                  'GuideU',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
+                ),
+
+                /// 🔹 ACTIONS (MERGED CLEANLY)
+                actions: [
+                  /// 🚪 LOGOUT (from your partner)
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.white),
+                    tooltip: 'Sign Out',
+                    onPressed: () async {
+                      await Supabase.instance.client.auth.signOut();
+                    },
+                  ),
+
+                  /// 🔖 BOOKMARK (your styled version)
+                  IconButton(
+                    icon: ShaderMask(
+                      shaderCallback: (Rect bounds) {
+                        return const LinearGradient(
+                          colors: [
+                            Color(0xFFFFFFFF),
+                            Color(0xFFFFF176),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds);
+                      },
+                      child: const Icon(
+                        Icons.bookmark,
+                        color: Colors.white,
+                      ),
+                    ),
+                    tooltip: 'Saved',
+                    onPressed: () {
+                      Navigator.pushNamed(context, AppRoutes.saved);
+                    },
+                  ),
+
+                  const SizedBox(width: 6),
+
+                  /// 👤 PROFILE
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.white,
+                      child: const Icon(
+                        Icons.person,
+                        color: Color(0xFF006633),
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            body: _buildBody(context, viewModel),
-            bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 0),
-          );
-        },
-      ),
-    );
-  }
+          ),
+
+          body: _buildBody(context, viewModel),
+          bottomNavigationBar:
+              const HandbookBottomNavBar(currentIndex: 0),
+        );
+      },
+    ),
+  );
+}
 
   Widget _buildBody(BuildContext context, HandbookMainViewModel viewModel) {
     if (viewModel.loading) {
