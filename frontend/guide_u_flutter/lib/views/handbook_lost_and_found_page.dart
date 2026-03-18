@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'handbook_bottom_nav_bar.dart';
+import '../widgets/internet_required_notice.dart';
 
 class HandbookLostAndFoundPage extends StatelessWidget {
   const HandbookLostAndFoundPage({Key? key}) : super(key: key);
@@ -24,6 +25,8 @@ class HandbookLostAndFoundPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const InternetRequiredNotice(featureName: 'Lost and found'),
+
           // Header / Instructions
           Container(
             padding: const EdgeInsets.all(20),
@@ -57,10 +60,7 @@ class HandbookLostAndFoundPage extends StatelessWidget {
                 SizedBox(height: 8),
                 Text(
                   'Provide details below to help us locate or return lost items.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -69,7 +69,9 @@ class HandbookLostAndFoundPage extends StatelessWidget {
           // Reporter Info
           Card(
             margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -113,7 +115,9 @@ class HandbookLostAndFoundPage extends StatelessWidget {
           // Item Details
           Card(
             margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -170,7 +174,9 @@ class HandbookLostAndFoundPage extends StatelessWidget {
           // Photo Upload
           Card(
             margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -216,7 +222,9 @@ class HandbookLostAndFoundPage extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF006633),
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
             onPressed: () {},
             child: const Text(
