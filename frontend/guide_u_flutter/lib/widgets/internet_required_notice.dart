@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../view_models/connectivity_view_model.dart';
 
 class InternetRequiredNotice extends StatelessWidget {
   final String featureName;
@@ -7,6 +9,11 @@ class InternetRequiredNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOnline = context.watch<ConnectivityViewModel>().isOnline;
+    if (isOnline) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),

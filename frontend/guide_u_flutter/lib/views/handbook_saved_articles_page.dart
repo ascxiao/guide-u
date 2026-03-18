@@ -120,7 +120,7 @@ class _HandbookSavedArticlesPageState
                                     'content': article['body_text'] ?? '',
                                   },
                                 );
-                                final savedVM = Provider.of<SavedArticlesViewModel>(context, listen: false);
+                                if (!mounted) return;
                                 final userId = Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
                                 await savedVM.fetchSavedArticles(userId);
                               },

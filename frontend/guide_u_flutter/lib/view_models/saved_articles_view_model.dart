@@ -62,6 +62,11 @@ class SavedArticlesViewModel extends ChangeNotifier {
     return true;
   }
 
+  Future<void> _refreshOnlineStatus() async {
+    final connectivityResult = await _connectivity.checkConnectivity();
+    _isOnline = _isOnlineFromConnectivityResult(connectivityResult);
+  }
+
   Future<void> _loadSavedArticlesFromLocal(String userId) async {
     final articleIds = await _cacheService.getSavedArticlesForUser(userId);
     _savedArticles = articleIds
@@ -135,8 +140,7 @@ class SavedArticlesViewModel extends ChangeNotifier {
       await _loadSavedArticlesFromLocal(userId);
       notifyListeners();
 
-      final connectivityResult = await _connectivity.checkConnectivity();
-      _isOnline = _isOnlineFromConnectivityResult(connectivityResult);
+      await _refreshOnlineStatus();
 
       if (!_isOnline) {
         await _loadSavedArticlesFromLocal(userId);
@@ -163,6 +167,8 @@ class SavedArticlesViewModel extends ChangeNotifier {
   }
 
   Future<void> addSavedArticle(String userId, String articleId) async {
+    await _refreshOnlineStatus();
+
     if (!isArticleSaved(articleId)) {
       _savedArticles = [
         ..._savedArticles,
@@ -197,6 +203,8 @@ class SavedArticlesViewModel extends ChangeNotifier {
   }
 
   Future<void> removeSavedArticle(String userId, String articleId) async {
+    await _refreshOnlineStatus();
+
     _savedArticles =
         _savedArticles.where((a) => a.articleId != articleId).toList();
     notifyListeners();
