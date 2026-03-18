@@ -7,6 +7,11 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final session = Supabase.instance.client.auth.currentSession;
+    final user = session?.user;
+    final userName = user?.userMetadata?['name'] ?? 'Unknown User';
+    final userEmail = user?.email ?? 'No email';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F4F4), // match main page background
       appBar: AppBar(
@@ -46,24 +51,28 @@ class ProfileScreen extends StatelessWidget {
                       color: const Color(0xFF006633).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.person, color: Color(0xFF006633), size: 36),
+                    child: const Icon(
+                      Icons.person,
+                      color: Color(0xFF006633),
+                      size: 36,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
-                        'User Name',
-                        style: TextStyle(
+                        userName,
+                        style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 18,
                           color: Color(0xFF006633),
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'user@email.com',
-                        style: TextStyle(
+                        userEmail,
+                        style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 14,
                         ),
@@ -79,7 +88,10 @@ class ProfileScreen extends StatelessWidget {
               child: ListView(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
                     child: Text(
                       'Settings',
                       style: TextStyle(
@@ -112,7 +124,10 @@ class ProfileScreen extends StatelessWidget {
                           color: const Color(0xFF006633).withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.logout, color: Color(0xFF006633)),
+                        child: const Icon(
+                          Icons.logout,
+                          color: Color(0xFF006633),
+                        ),
                       ),
                       title: const Text(
                         'Logout',
