@@ -2,8 +2,64 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../routes/app_routes.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _checkingAdmin = true;
+  bool _isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshAdminStatus();
+  }
+
+  Future<void> _refreshAdminStatus() async {
+    if (!mounted) return;
+    setState(() {
+      _checkingAdmin = true;
+    });
+
+    final isAdmin = await _isCurrentUserAdmin();
+
+    if (!mounted) return;
+    setState(() {
+      _isAdmin = isAdmin;
+      _checkingAdmin = false;
+    });
+  }
+
+  Future<bool> _isCurrentUserAdmin() async {
+    final supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser?.id;
+
+    if (userId == null) {
+      return false;
+    }
+
+    try {
+      final List<dynamic> rows = await supabase
+          .from('admins')
+          .select('role')
+          .eq('user_id', userId)
+          .limit(20);
+
+      return rows.any((row) {
+        final role = (Map<String, dynamic>.from(row)['role'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
+        return role == 'admin' || role == 'super_admin';
+      });
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +79,13 @@ class ProfileScreen extends StatelessWidget {
         elevation: 0,
         foregroundColor: const Color(0xFF006633),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Refresh access',
+            onPressed: _refreshAdminStatus,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
@@ -106,6 +169,53 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+
+                  if (_checkingAdmin)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: LinearProgressIndicator(minHeight: 2),
+                    ),
+
+                  if (_isAdmin)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF006633).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.admin_panel_settings_outlined,
+                            color: Color(0xFF006633),
+                          ),
+                        ),
+                        title: const Text(
+                          'Admin Dashboard',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: const Text('Manage admin user access'),
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.adminDashboard,
+                          );
+                        },
+                      ),
+                    ),
 
                   // Logout card
                   Container(

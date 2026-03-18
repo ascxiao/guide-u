@@ -9,6 +9,7 @@ import '../views/handbook_incident_page.dart';
 import '../views/handbook_lost_and_found_page.dart';
 import '../views/login_screen.dart';
 import '../views/profile_screen.dart';
+import '../views/admin_dashboard_screen.dart';
 
 class AppRoutes {
   static const String main = '/';
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String incident = '/incident';
   static const String lostAndFound = '/lost';
   static const String profile = '/profile';
+  static const String adminDashboard = '/admin-dashboard';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final hasSession = Supabase.instance.client.auth.currentSession != null;
@@ -68,9 +70,9 @@ class AppRoutes {
           builder: (_) => const HandbookLostAndFoundPage(),
         );
       case profile:
-        return MaterialPageRoute(
-          builder: (_) => const ProfileScreen(),
-        );
+        return MaterialPageRoute(builder: (_) => const ProfileScreen());
+      case adminDashboard:
+        return MaterialPageRoute(builder: (_) => const AdminDashboardScreen());
       default:
         return null;
     }
