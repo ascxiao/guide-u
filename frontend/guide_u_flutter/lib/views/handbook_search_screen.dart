@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../models/handbook_article.dart';
 import '../routes/app_routes.dart';
 import '../view_models/handbook_search_view_model.dart';
@@ -16,27 +15,59 @@ class HandbookSearchScreen extends StatelessWidget {
       child: Consumer<HandbookSearchViewModel>(
         builder: (context, viewModel, _) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Search Handbook')),
-            body: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Search articles',
-                      hintText: 'Search by title, chapter, section, or content',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.search),
+            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+            appBar: AppBar(
+              title: const Text(
+                'Search Handbook',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF006633),
+            ),
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // 🔍 SEARCH BAR
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: viewModel.controller,
+                              onChanged: viewModel.updateQuery,
+                              decoration: const InputDecoration(
+                                hintText: 'Search articles...',
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                          if (viewModel.query.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: viewModel.clearSearch,
+                            ),
+                        ],
+                      ),
                     ),
-                    onChanged: viewModel.updateQuery,
-                    textInputAction: TextInputAction.search,
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(child: _SearchResults(viewModel: viewModel)),
-                ],
+                    const SizedBox(height: 16),
+
+                    // 🔹 SEARCH RESULTS
+                    Expanded(child: _SearchResults(viewModel: viewModel)),
+                  ],
+                ),
               ),
             ),
-            bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 3),
+            bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 4),
           );
         },
       ),
