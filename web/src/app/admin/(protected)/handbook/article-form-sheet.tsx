@@ -4,7 +4,6 @@ import { useState, useTransition } from "react"
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
@@ -50,7 +49,13 @@ export function ArticleFormSheet({ article, trigger }: ArticleFormSheetProps) {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={trigger ? <span className="cursor-pointer" /> : triggerEl}>
+      <SheetTrigger
+        render={
+          trigger
+            ? <button type="button" className="cursor-pointer text-left" />
+            : triggerEl
+        }
+      >
         {trigger ?? (isEdit ? "Edit" : "+ New Article")}
       </SheetTrigger>
 

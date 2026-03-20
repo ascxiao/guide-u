@@ -23,7 +23,9 @@ export function ArticlePreviewSheet({ article, trigger }: ArticlePreviewSheetPro
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<span className="cursor-pointer" />}>
+      <SheetTrigger
+        render={<button type="button" className="w-full cursor-pointer text-left" />}
+      >
         {trigger}
       </SheetTrigger>
 

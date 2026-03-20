@@ -1,19 +1,48 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  People,
-  Book01Icon,
-  Alert02Icon,
-  Archive01Icon,
-  Clock01Icon,
-} from "@hugeicons/core-free-icons"
+import { unstable_cache } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/server"
 
+const DASHBOARD_STATS_REVALIDATE_SECONDS = 30
+
+const getDashboardStats = unstable_cache(
+  async () => {
+    const supabase = await createAdminClient()
+
+    const [
+      { count: articleCount },
+      { count: incidentCount },
+      { count: lostFoundCount },
+      { count: userCount },
+    ] = await Promise.all([
+      supabase.from("articles").select("id", { count: "estimated", head: true }),
+      supabase
+        .from("incident_reports")
+        .select("id", { count: "estimated", head: true })
+        .in("status", ["pending", "under_review"]),
+      supabase
+        .from("lost_found_reports")
+        .select("id", { count: "estimated", head: true })
+        .in("status", ["open", "under_review"]),
+      // Counting profiles is significantly faster than auth.admin.listUsers in most setups.
+      supabase.from("profiles").select("id", { count: "estimated", head: true }),
+    ])
+
+    return {
+      articleCount: articleCount ?? 0,
+      incidentCount: incidentCount ?? 0,
+      lostFoundCount: lostFoundCount ?? 0,
+      userCount: userCount ?? 0,
+    }
+  },
+  ["admin-dashboard-stats"],
+  { revalidate: DASHBOARD_STATS_REVALIDATE_SECONDS }
+)
+
 const quickActions = [
-  { label: "Add Handbook Entry", href: "/admin/handbook", icon: Book01Icon, badge: "Handbook" },
-  { label: "Review Incident Reports", href: "/admin/incident-report", icon: Alert02Icon, badge: "Incidents" },
-  { label: "Manage Lost & Found", href: "/admin/lost-and-found", icon: Archive01Icon, badge: "Lost & Found" },
+  { label: "Add Handbook Entry", href: "/admin/handbook", icon: "H", badge: "Handbook" },
+  { label: "Review Incident Reports", href: "/admin/incident-report", icon: "I", badge: "Incidents" },
+  { label: "Manage Lost & Found", href: "/admin/lost-and-found", icon: "L", badge: "Lost & Found" },
 ]
 
 const systemServices = [
@@ -23,47 +52,32 @@ const systemServices = [
 ]
 
 export default async function DashboardPage() {
-  const supabase = await createAdminClient()
-
-  const [
-    { count: articleCount },
-    { count: incidentCount },
-    { count: lostFoundCount },
-    { data: usersData },
-  ] = await Promise.all([
-    supabase.from("articles").select("*", { count: "exact", head: true }),
-    supabase.from("incident_reports").select("*", { count: "exact", head: true }).in("status", ["pending", "under_review"]),
-    supabase.from("lost_found_reports").select("*", { count: "exact", head: true }).in("status", ["open", "under_review"]),
-    supabase.auth.admin.listUsers({ perPage: 1 }),
-  ])
-
-  // `total` exists on the paginated response when pagination is supported
-  const userCount = (usersData as { total?: number } | null)?.total ?? (usersData?.users?.length ?? 0)
+  const { articleCount, incidentCount, lostFoundCount, userCount } = await getDashboardStats()
 
   const stats = [
     {
       title: "Total Users",
       value: String(userCount),
       description: "Registered accounts",
-      icon: People,
+      icon: "U",
     },
     {
       title: "Handbook Entries",
-      value: String(articleCount ?? 0),
+      value: String(articleCount),
       description: "Published articles",
-      icon: Book01Icon,
+      icon: "H",
     },
     {
       title: "Incident Reports",
-      value: String(incidentCount ?? 0),
+      value: String(incidentCount),
       description: "Pending / Under review",
-      icon: Alert02Icon,
+      icon: "I",
     },
     {
       title: "Lost & Found",
-      value: String(lostFoundCount ?? 0),
+      value: String(lostFoundCount),
       description: "Open / Under review",
-      icon: Archive01Icon,
+      icon: "L",
     },
   ]
 
@@ -84,7 +98,7 @@ export default async function DashboardPage() {
                 {stat.title}
               </CardTitle>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#006633]/10">
-                <HugeiconsIcon icon={stat.icon} size={18} className="text-[#006633]" strokeWidth={1.8} />
+                <span className="text-sm font-semibold text-[#006633]">{stat.icon}</span>
               </div>
             </CardHeader>
             <CardContent>
@@ -107,13 +121,13 @@ export default async function DashboardPage() {
                   Latest events across all modules
                 </CardDescription>
               </div>
-              <HugeiconsIcon icon={Clock01Icon} size={16} className="text-muted-foreground" strokeWidth={1.8} />
+              <span className="text-sm text-muted-foreground">T</span>
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-3">
-                <HugeiconsIcon icon={Clock01Icon} size={20} className="text-muted-foreground" strokeWidth={1.5} />
+                <span className="text-sm font-semibold text-muted-foreground">T</span>
               </div>
               <p className="text-sm font-medium text-foreground">No recent activity</p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -139,7 +153,7 @@ export default async function DashboardPage() {
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#006633]/10 group-hover:bg-[#006633]/15">
-                    <HugeiconsIcon icon={action.icon} size={16} className="text-[#006633]" strokeWidth={1.8} />
+                    <span className="text-xs font-semibold text-[#006633]">{action.icon}</span>
                   </div>
                   <span className="font-medium text-foreground">{action.label}</span>
                 </div>

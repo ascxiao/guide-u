@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table"
 import { IncidentDetailSheet, StatusBadge } from "./incident-detail-sheet"
 import { IncidentFormSheet } from "./incident-form-sheet"
-import type { IncidentReport, IncidentStatus } from "@/lib/supabase/types"
+import type { IncidentReport } from "@/lib/supabase/types"
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "all", label: "All" },
