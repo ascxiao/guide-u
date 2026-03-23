@@ -3,7 +3,7 @@
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 
-function ThemeProvider({
+export default function ThemeProvider({
   children,
   ...props
 }: React.ComponentProps<typeof NextThemesProvider>) {
@@ -20,5 +20,3 @@ function ThemeProvider({
     </NextThemesProvider>
   )
 }
-
-export { ThemeProvider }

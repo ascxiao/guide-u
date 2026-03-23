@@ -120,6 +120,47 @@ create index article_embeddings_idx on article_embeddings
 
 
 -- ===============================
+-- TABLE RLS: INCIDENT + LOST & FOUND REPORTS
+-- ===============================
+alter table incident_reports enable row level security;
+alter table lost_found_reports enable row level security;
+
+create policy "Users can create own incident reports"
+on incident_reports for insert to authenticated
+with check (auth.uid() = user_id);
+
+create policy "Users can read own incident reports"
+on incident_reports for select to authenticated
+using (auth.uid() = user_id);
+
+create policy "Admins can manage all incident reports"
+on incident_reports for all to authenticated
+using (
+    exists (select 1 from admins where admins.user_id = auth.uid())
+)
+with check (
+    exists (select 1 from admins where admins.user_id = auth.uid())
+);
+
+create policy "Users can create own lost_found reports"
+on lost_found_reports for insert to authenticated
+with check (auth.uid() = user_id);
+
+create policy "Users can read own lost_found reports"
+on lost_found_reports for select to authenticated
+using (auth.uid() = user_id);
+
+create policy "Admins can manage all lost_found reports"
+on lost_found_reports for all to authenticated
+using (
+    exists (select 1 from admins where admins.user_id = auth.uid())
+)
+with check (
+    exists (select 1 from admins where admins.user_id = auth.uid())
+);
+
+
+-- ===============================
 -- STORAGE BUCKETS
 -- ===============================
 do $$
