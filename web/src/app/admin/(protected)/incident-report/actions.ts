@@ -7,6 +7,7 @@ import { sendIncidentCreatedEmail, sendStatusChangeEmail } from "@/lib/email/sta
 
 const INCIDENT_BUCKET = "incident-report-images"
 const INCIDENT_CREATE_NOTIFICATION_EMAIL = "usls.projectdigitalization@gmail.com"
+const REPORT_EMAIL_MODE = (process.env.REPORT_EMAIL_MODE ?? "inline").toLowerCase()
 
 function looksLikeEmail(value: string | null) {
   if (!value) return false
@@ -106,19 +107,21 @@ export async function createIncidentReport(formData: FormData) {
 
     if (error) return { error: error.message }
 
-    // Keep report creation successful even if notification email fails.
-    try {
-      await sendIncidentCreatedEmail({
-        to: INCIDENT_CREATE_NOTIFICATION_EMAIL,
-        title: title ?? "",
-        description: description ?? "",
-        location: location ?? "",
-        reporterStudentId: reporterStudentId ?? "",
-        reporterEmail: reporterEmail ?? "",
-        imageCount: imagePaths.length,
-      })
-    } catch {
-      // Swallow email errors so report persistence is not blocked.
+    if (REPORT_EMAIL_MODE !== "observer") {
+      // Keep report creation successful even if notification email fails.
+      try {
+        await sendIncidentCreatedEmail({
+          to: INCIDENT_CREATE_NOTIFICATION_EMAIL,
+          title: title ?? "",
+          description: description ?? "",
+          location: location ?? "",
+          reporterStudentId: reporterStudentId ?? "",
+          reporterEmail: reporterEmail ?? "",
+          imageCount: imagePaths.length,
+        })
+      } catch {
+        // Swallow email errors so report persistence is not blocked.
+      }
     }
 
     revalidatePath("/admin/incident-report")
@@ -163,7 +166,7 @@ export async function updateIncidentStatus(id: string, status: IncidentStatus) {
   const recipientEmail = looksLikeEmail(currentReporterEmail)
     ? currentReporterEmail
     : await getRecipientEmail(current.user_id)
-  if (recipientEmail) {
+  if (recipientEmail && REPORT_EMAIL_MODE !== "observer") {
     await sendStatusChangeEmail({
       to: recipientEmail,
       reportKind: "incident",
