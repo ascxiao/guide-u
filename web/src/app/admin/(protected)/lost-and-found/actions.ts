@@ -6,6 +6,7 @@ import type { LostFoundStatus, ReportType } from "@/lib/supabase/types"
 import { sendStatusChangeEmail } from "@/lib/email/status-notifier"
 
 const LOST_FOUND_BUCKET = "lost-found-images"
+const REPORT_EMAIL_MODE = (process.env.REPORT_EMAIL_MODE ?? "inline").toLowerCase()
 
 function looksLikeEmail(value: string | null) {
   if (!value) return false
@@ -151,7 +152,7 @@ export async function updateLostFoundStatus(id: string, status: LostFoundStatus)
   const recipientEmail = looksLikeEmail(currentReporterEmail)
     ? currentReporterEmail
     : await getRecipientEmail(current.user_id)
-  if (recipientEmail) {
+  if (recipientEmail && REPORT_EMAIL_MODE !== "observer") {
     await sendStatusChangeEmail({
       to: recipientEmail,
       reportKind: "lost_found",
