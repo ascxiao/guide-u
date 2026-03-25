@@ -19,6 +19,17 @@ interface IncidentCreatedEmailInput {
   imageCount: number
 }
 
+interface LostFoundCreatedEmailInput {
+  to: string
+  itemName: string
+  reportType: string
+  description: string
+  location: string
+  reporterStudentId: string
+  reporterEmail: string
+  imageCount: number
+}
+
 function getTransport() {
   const host = process.env.SMTP_HOST
   const port = Number.parseInt(process.env.SMTP_PORT ?? "0", 10)
@@ -196,6 +207,91 @@ export async function sendIncidentCreatedEmail({
     text: [
       "A new incident report was submitted.",
       `Title: ${title || "Untitled"}`,
+      `Description: ${description || "Not provided"}`,
+      `Location: ${location || "Not provided"}`,
+      `Reporter Student ID: ${reporterStudentId || "Not provided"}`,
+      `Reporter Email: ${reporterEmail || "Not provided"}`,
+      `Attached Images: ${imageCount}`,
+    ].join("\n"),
+    html,
+  })
+
+  return { sent: true as const }
+}
+
+export async function sendLostFoundCreatedEmail({
+  to,
+  itemName,
+  reportType,
+  description,
+  location,
+  reporterStudentId,
+  reporterEmail,
+  imageCount,
+}: LostFoundCreatedEmailInput) {
+  const transport = getTransport()
+  const from = process.env.SMTP_FROM
+
+  if (!transport || !from) {
+    return { sent: false as const, reason: "SMTP is not configured" }
+  }
+
+  const plainItem = (itemName ?? "").trim() || "Unnamed"
+  const safeItem = fmt(itemName, "Unnamed")
+  const safeType = fmt(reportType, "Not provided")
+  const safeDescription = fmt(description)
+  const safeLocation = fmt(location)
+  const safeStudentId = fmt(reporterStudentId)
+  const safeReporterEmail = fmt(reporterEmail)
+
+  const html = buildShell(
+    "New Lost & Found Report Submitted",
+    "A new lost and found report was created and is now available for review.",
+    `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+        <tr>
+          <td style="padding:12px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb;width:180px;font-size:12px;font-weight:600;color:#4b5563;">Item</td>
+          <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#111827;">${safeItem}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb;width:180px;font-size:12px;font-weight:600;color:#4b5563;">Report Type</td>
+          <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#111827;">${safeType}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb;width:180px;font-size:12px;font-weight:600;color:#4b5563;">Description</td>
+          <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#111827;">${safeDescription}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb;width:180px;font-size:12px;font-weight:600;color:#4b5563;">Location</td>
+          <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#111827;">${safeLocation}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb;width:180px;font-size:12px;font-weight:600;color:#4b5563;">Reporter Student ID</td>
+          <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#111827;">${safeStudentId}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb;width:180px;font-size:12px;font-weight:600;color:#4b5563;">Reporter Email</td>
+          <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#111827;">${safeReporterEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 14px;background:#f9fafb;width:180px;font-size:12px;font-weight:600;color:#4b5563;">Attached Images</td>
+          <td style="padding:12px 14px;font-size:14px;color:#111827;">${imageCount} ${imageCount === 1 ? "file" : "files"}</td>
+        </tr>
+      </table>
+      <p style="margin:18px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">
+        This is an automated email from GuideU. Please do not reply directly to this message.
+      </p>
+    `,
+  )
+
+  await transport.sendMail({
+    from,
+    to,
+    subject: `New Lost & Found Report: ${plainItem}`,
+    text: [
+      "A new lost and found report was submitted.",
+      `Item: ${itemName || "Unnamed"}`,
+      `Type: ${reportType || "Not provided"}`,
       `Description: ${description || "Not provided"}`,
       `Location: ${location || "Not provided"}`,
       `Reporter Student ID: ${reporterStudentId || "Not provided"}`,
