@@ -7,11 +7,14 @@ import '../views/handbook_search_screen.dart';
 import '../views/handbook_chatbot.dart';
 import '../views/handbook_incident_page.dart';
 import '../views/handbook_lost_and_found_page.dart';
+import '../views/directories_page.dart';
 import '../views/login_screen.dart';
 import '../views/profile_screen.dart';
 import '../views/admin_dashboard_screen.dart';
+import '../views/services_page.dart';
 
 class AppRoutes {
+    static const String directories = '/directories';
   static const String main = '/';
   static const String login = '/login';
   static const String article = '/article';
@@ -22,6 +25,7 @@ class AppRoutes {
   static const String lostAndFound = '/lost';
   static const String profile = '/profile';
   static const String adminDashboard = '/admin-dashboard';
+  static const String services = '/services';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final hasSession = Supabase.instance.client.auth.currentSession != null;
@@ -59,6 +63,10 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => const HandbookSavedArticlesPage(),
         );
+      case directories:
+        return MaterialPageRoute(
+          builder: (_) => const DirectoriesPage(),
+        );
       case search:
         return MaterialPageRoute(builder: (_) => const HandbookSearchScreen());
       case chatbot:
@@ -73,6 +81,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
       case adminDashboard:
         return MaterialPageRoute(builder: (_) => const AdminDashboardScreen());
+      case services:
+        return MaterialPageRoute(builder: (_) => const ServicesPage());
       default:
         return null;
     }
