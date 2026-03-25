@@ -23,9 +23,12 @@ class _HandbookChatbotBody extends StatefulWidget {
   State<_HandbookChatbotBody> createState() => _HandbookChatbotBodyState();
 }
 
-class _HandbookChatbotBodyState extends State<_HandbookChatbotBody> {
+class _HandbookChatbotBodyState extends State<_HandbookChatbotBody>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
+  bool _isPressed = false;
 
   void _send() {
     final viewModel = Provider.of<HandbookChatbotViewModel>(
@@ -39,10 +42,13 @@ class _HandbookChatbotBodyState extends State<_HandbookChatbotBody> {
     _controller.clear();
     viewModel.sendPrompt(text);
 
-    // Smooth auto-scroll
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOut,
+        );
       }
     });
   }
@@ -52,32 +58,38 @@ class _HandbookChatbotBodyState extends State<_HandbookChatbotBody> {
     final viewModel = Provider.of<HandbookChatbotViewModel>(context);
 
     return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
+
+      /// 🤍 APPBAR
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
+            color: Color(0xFF27AE60),
+          ),
           onPressed: () =>
               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false),
-          tooltip: 'Back',
         ),
         title: const Text(
-          'Handbook Chatbot',
+          'Juan La Salle',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            letterSpacing: 0.5,
+            color: Color(0xFF27AE60),
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
           ),
         ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF006633),
+        centerTitle: true,
       ),
+
       body: SafeArea(
         child: Column(
           children: [
             const Padding(
-              padding: EdgeInsets.fromLTRB(12, 12, 12, 0),
+              padding: EdgeInsets.fromLTRB(12, 8, 12, 0),
               child: InternetRequiredNotice(featureName: 'Chatbot'),
             ),
 
@@ -86,119 +98,144 @@ class _HandbookChatbotBodyState extends State<_HandbookChatbotBody> {
               child: viewModel.messages.isEmpty
                   ? const Center(
                       child: Text(
-                        "Ask me anything about the handbook",
-                        style: TextStyle(color: Colors.grey),
+                        "Ask me anything",
+                        style: TextStyle(color: Colors.black38, fontSize: 14),
                       ),
                     )
                   : ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(16),
                       physics: const BouncingScrollPhysics(),
                       itemCount: viewModel.messages.length,
                       itemBuilder: (context, index) {
                         final msg = viewModel.messages[index];
 
-                        return Align(
-                          alignment: msg.isUser
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            padding: const EdgeInsets.all(12),
-                            constraints: BoxConstraints(
-                              maxWidth:
-                                  MediaQuery.of(context).size.width * 0.75,
-                            ),
-                            decoration: BoxDecoration(
-                              color: msg.isUser
-                                  ? const Color(0xFF006633)
-                                  : Colors.grey.shade200,
-                              borderRadius: BorderRadius.only(
-                                topLeft: const Radius.circular(16),
-                                topRight: const Radius.circular(16),
-                                bottomLeft: msg.isUser
-                                    ? const Radius.circular(16)
-                                    : const Radius.circular(4),
-                                bottomRight: msg.isUser
-                                    ? const Radius.circular(4)
-                                    : const Radius.circular(16),
+                        return TweenAnimationBuilder(
+                          duration: const Duration(milliseconds: 300),
+                          tween: Tween<double>(begin: 30, end: 0),
+                          curve: Curves.easeOut,
+                          builder: (context, value, child) {
+                            return Opacity(
+                              opacity: (1 - (value / 30)).clamp(0, 1),
+                              child: Transform.translate(
+                                offset: Offset(0, value),
+                                child: Transform.scale(
+                                  scale: 0.98 + (0.02 * (1 - value / 30)),
+                                  child: child,
+                                ),
                               ),
-                            ),
-                            child: msg.isUser
-                                ? Text(
-                                    msg.text,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
+                            );
+                          },
+                          child: Align(
+                            alignment: msg.isUser
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              constraints: BoxConstraints(
+                                maxWidth:
+                                    MediaQuery.of(context).size.width * 0.72,
+                              ),
+                              decoration: BoxDecoration(
+                                color: msg.isUser
+                                    ? const Color(0xFF27AE60)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(16),
+                                  topRight: const Radius.circular(16),
+                                  bottomLeft: msg.isUser
+                                      ? const Radius.circular(16)
+                                      : const Radius.circular(4),
+                                  bottomRight: msg.isUser
+                                      ? const Radius.circular(4)
+                                      : const Radius.circular(16),
+                                ),
+                                border: msg.isUser
+                                    ? null
+                                    : Border.all(color: Colors.black12),
+                                boxShadow: [
+                                  if (!msg.isUser)
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.04),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
                                     ),
-                                  )
-                                : Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        msg.text,
-                                        style: const TextStyle(
-                                          color: Colors.black87,
-                                          fontSize: 16,
-                                        ),
+                                ],
+                              ),
+                              child: msg.isUser
+                                  ? Text(
+                                      msg.text,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        height: 1.4,
                                       ),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: IconButton(
-                                          icon: const Icon(
-                                            Icons.copy,
-                                            size: 18,
+                                    )
+                                  : Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          msg.text,
+                                          style: const TextStyle(
+                                            color: Colors.black87,
+                                            fontSize: 15,
+                                            height: 1.4,
                                           ),
-                                          tooltip: 'Copy',
-                                          onPressed: () async {
-                                            await Clipboard.setData(
-                                              ClipboardData(text: msg.text),
-                                            );
-
-                                            if (context.mounted) {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Copied to clipboard!',
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          },
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                        const SizedBox(height: 4),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: GestureDetector(
+                                            onTap: () async {
+                                              await Clipboard.setData(
+                                                ClipboardData(text: msg.text),
+                                              );
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Copied'),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: const Icon(
+                                              Icons.copy_rounded,
+                                              size: 16,
+                                              color: Colors.black38,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
                           ),
                         );
                       },
                     ),
             ),
 
-            /// ⏳ TYPING INDICATOR
+            /// ⏳ TYPING DOTS (enhanced, repeating)
             if (viewModel.loading)
               const Padding(
-                padding: EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    SizedBox(width: 8),
-                    CircularProgressIndicator(strokeWidth: 2),
-                    SizedBox(width: 12),
-                    Text("Thinking..."),
-                  ],
-                ),
+                padding: EdgeInsets.only(bottom: 10),
+                child: TypingDots(),
               ),
 
+            /// ⚠️ MINI DISCLAIMER
             const Padding(
-              padding: EdgeInsets.fromLTRB(16, 2, 16, 0),
+              padding: EdgeInsets.only(bottom: 6),
               child: Text(
-                'Disclaimer: The chatbot can make mistakes. Please verify important information.',
+                "AI may make mistakes. Verify important information.",
                 style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
+                  fontSize: 11,
+                  color: Colors.black38,
                   fontStyle: FontStyle.italic,
                 ),
                 textAlign: TextAlign.center,
@@ -207,28 +244,58 @@ class _HandbookChatbotBodyState extends State<_HandbookChatbotBody> {
 
             /// ✏️ INPUT FIELD
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.black12),
                 ),
                 child: Row(
                   children: [
+                    const Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: Colors.black38,
+                    ),
+
+                    const SizedBox(width: 8),
+
                     Expanded(
                       child: TextField(
                         controller: _controller,
                         onSubmitted: (_) => _send(),
                         decoration: const InputDecoration(
-                          hintText: 'Ask something...',
+                          hintText: 'Ask Juan La Salle...',
                           border: InputBorder.none,
                         ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.send, color: Color(0xFF006633)),
-                      onPressed: viewModel.loading ? null : _send,
+
+                    GestureDetector(
+                      onTapDown: (_) => setState(() => _isPressed = true),
+                      onTapUp: (_) {
+                        setState(() => _isPressed = false);
+                        _send();
+                      },
+                      onTapCancel: () => setState(() => _isPressed = false),
+                      child: AnimatedScale(
+                        scale: _isPressed ? 0.85 : 1,
+                        duration: const Duration(milliseconds: 120),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF27AE60),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_upward_rounded,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -237,6 +304,70 @@ class _HandbookChatbotBodyState extends State<_HandbookChatbotBody> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 🔵 Repeating bouncing typing dots widget
+class TypingDots extends StatefulWidget {
+  const TypingDots({super.key});
+
+  @override
+  State<TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<TypingDots> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(3, (index) {
+        return AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            double offset = (_animation.value - 0.5).abs() * -12; // bounce
+            double colorValue = (_animation.value + index * 0.3) % 1; // phased color
+            return Transform.translate(
+              offset: Offset(0, offset),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.lerp(
+                    const Color(0xFFBDBDBD),
+                    const Color(0xFF27AE60),
+                    colorValue,
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      }),
     );
   }
 }

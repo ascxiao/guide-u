@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'handbook_bottom_nav_bar.dart';
 import '../widgets/internet_required_notice.dart';
+import '../widgets/handbook_chatbot_fab.dart';
 
 class HandbookIncidentPage extends StatelessWidget {
   const HandbookIncidentPage({Key? key}) : super(key: key);
@@ -234,6 +235,8 @@ class HandbookIncidentPage extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 3),
+      floatingActionButton: const HandbookChatbotFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

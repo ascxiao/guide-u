@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'handbook_bottom_nav_bar.dart';
 import '../widgets/internet_required_notice.dart';
+import '../widgets/handbook_chatbot_fab.dart';
 
 class HandbookLostAndFoundPage extends StatelessWidget {
   const HandbookLostAndFoundPage({Key? key}) : super(key: key);
@@ -240,6 +241,8 @@ class HandbookLostAndFoundPage extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 1),
+      floatingActionButton: const HandbookChatbotFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

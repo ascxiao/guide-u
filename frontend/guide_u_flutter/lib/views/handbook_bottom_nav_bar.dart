@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../routes/app_routes.dart';
 import '../routes/chatbot_routes.dart';
 
@@ -71,65 +72,36 @@ class HandbookBottomNavBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _NavItem(
-                  icon: Icons.home_outlined,
+                  icon: PhosphorIcons.house(PhosphorIconsStyle.fill),
                   selected: currentIndex == 0,
                   onTap: () => _onItemTapped(context, 0),
+                  isPhosphor: true,
                 ),
                 _NavItem(
-                  icon: Icons.find_in_page_outlined,
+                  icon: PhosphorIcons.fileMagnifyingGlass(PhosphorIconsStyle.fill),
                   selected: currentIndex == 1,
                   onTap: () => _onItemTapped(context, 1),
+                  isPhosphor: true,
                 ),
 
                 const SizedBox(width: 60),
 
                 _NavItem(
-                  icon: Icons.report_problem_outlined,
+                  icon: PhosphorIcons.warningCircle(PhosphorIconsStyle.fill),
                   selected: currentIndex == 3,
                   onTap: () => _onItemTapped(context, 3),
+                  isPhosphor: true,
                 ),
                 _NavItem(
-                  icon: Icons.search,
+                  icon: PhosphorIcons.magnifyingGlass(PhosphorIconsStyle.fill),
                   selected: currentIndex == 4,
                   onTap: () => _onItemTapped(context, 4),
+                  isPhosphor: true,
                 ),
               ],
             ),
 
-            /// 🔥 CENTER FLOATING CHATBOT BUTTON (GRADIENT)
-            Positioned(
-              top: -10,
-              child: GestureDetector(
-                onTap: () => _onItemTapped(context, 2),
-                child: Container(
-                  height: 65,
-                  width: 65,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF00A86B),
-                        Color(0xFF006633),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF006633).withOpacity(0.4),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.chat_bubble,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ),
-            ),
+            // Chatbot FAB will be handled by parent Scaffold, not here.
           ],
         ),
       ),
@@ -138,14 +110,16 @@ class HandbookBottomNavBar extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final bool selected;
   final VoidCallback onTap;
+  final bool isPhosphor;
 
   const _NavItem({
     required this.icon,
     required this.selected,
     required this.onTap,
+    this.isPhosphor = false,
   });
 
   @override
@@ -181,11 +155,17 @@ class _NavItem extends StatelessWidget {
               : const LinearGradient(
                   colors: [Colors.grey, Colors.grey],
                 ).createShader(bounds),
-          child: Icon(
-            icon,
-            size: 26,
-            color: Colors.white, // required for ShaderMask
-          ),
+          child: isPhosphor
+              ? PhosphorIcon(
+                  icon,
+                  size: 26,
+                  color: Colors.white,
+                )
+              : Icon(
+                  icon,
+                  size: 26,
+                  color: Colors.white,
+                ),
         ),
       ),
     );
