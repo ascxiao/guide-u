@@ -10,6 +10,7 @@ import 'widgets/connectivity_banner.dart';
 import 'view_models/connectivity_view_model.dart';
 import 'views/handbook_main_page.dart';
 import 'views/login_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +48,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
+        textTheme: TextTheme(
+          displayLarge: GoogleFonts.montserrat(fontWeight: FontWeight.bold), // headline1
+          displayMedium: GoogleFonts.montserrat(fontWeight: FontWeight.w600), // headline6
+          titleLarge: GoogleFonts.montserrat(fontWeight: FontWeight.w600), // headline5
+          titleMedium: GoogleFonts.montserrat(fontWeight: FontWeight.w500), // headline6
+          bodyLarge: GoogleFonts.poppins(), // bodyText1
+          bodyMedium: GoogleFonts.poppins(), // bodyText2
+          labelLarge: GoogleFonts.montserrat(fontWeight: FontWeight.w600), // buttons
+        ),
       ),
       builder: (context, child) => Stack(
         children: [

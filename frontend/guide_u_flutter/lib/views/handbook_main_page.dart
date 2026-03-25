@@ -3,6 +3,8 @@ import '../routes/app_routes.dart';
 import 'handbook_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import '../view_models/handbook_main_view_model.dart';
+import '../widgets/handbook_chatbot_fab.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class HandbookMainPage extends StatefulWidget {
   const HandbookMainPage({Key? key}) : super(key: key);
@@ -45,11 +47,15 @@ class _HandbookMainPageState extends State<HandbookMainPage>
     }
 
     // Title-case the rest
-    modified = modified.split(' ').map((word) {
-      if (word.isEmpty) return word;
-      if (word.startsWith('<<') && word.endsWith('>>')) return word; // skip placeholders
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
+    modified = modified
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          if (word.startsWith('<<') && word.endsWith('>>'))
+            return word; // skip placeholders
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        })
+        .join(' ');
 
     // Restore abbreviations
     for (int i = 0; i < matches.length; i++) {
@@ -75,10 +81,8 @@ class _HandbookMainPageState extends State<HandbookMainPage>
               child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF00A86B),
-                      Color(0xFF006633),
-                    ],
+                    colors: [Color(0xFF1F7A5A), Color(0xFF4FBF8F)],
+                    stops: [0.2, 1.0],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -87,32 +91,14 @@ class _HandbookMainPageState extends State<HandbookMainPage>
                   automaticallyImplyLeading: false,
                   backgroundColor: Colors.transparent,
                   elevation: 0,
-                  title: const Text(
-                    'GuideU',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Colors.white,
+                  title: SizedBox(
+                    height: 25,
+                    child: Image.asset(
+                      'assets/images/TypoguideU.png',
+                      fit: BoxFit.contain,
                     ),
                   ),
                   actions: [
-                    /// BOOKMARK
-                    IconButton(
-                      icon: ShaderMask(
-                        shaderCallback: (Rect bounds) {
-                          return const LinearGradient(
-                            colors: [Color(0xFFFFFFFF), Color(0xFFFFF176)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ).createShader(bounds);
-                        },
-                        child: const Icon(Icons.bookmark, color: Colors.white),
-                      ),
-                      tooltip: 'Saved',
-                      onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.saved);
-                      },
-                    ),
                     const SizedBox(width: 6),
 
                     /// PROFILE
@@ -140,6 +126,8 @@ class _HandbookMainPageState extends State<HandbookMainPage>
 
             body: _buildBody(context, viewModel),
             bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 0),
+            floatingActionButton: const HandbookChatbotFAB(),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           );
         },
       ),
@@ -165,6 +153,28 @@ class _HandbookMainPageState extends State<HandbookMainPage>
     if (grouped.isEmpty) {
       return const Center(child: Text('No articles found.'));
     }
+
+    // Ensure chapters are in order by sorting keys (numeric-aware)
+    final sortedChapterEntries = grouped.entries.toList()
+      ..sort((a, b) {
+        String aIdStr =
+            (a.value.values.first.isNotEmpty &&
+                a.value.values.first.first.chapterId != null)
+            ? a.value.values.first.first.chapterId.toString()
+            : a.key.toString();
+        String bIdStr =
+            (b.value.values.first.isNotEmpty &&
+                b.value.values.first.first.chapterId != null)
+            ? b.value.values.first.first.chapterId.toString()
+            : b.key.toString();
+        int? aId = int.tryParse(aIdStr);
+        int? bId = int.tryParse(bIdStr);
+        if (aId != null && bId != null) {
+          return aId.compareTo(bId);
+        } else {
+          return aIdStr.compareTo(bIdStr);
+        }
+      });
 
     return FadeTransition(
       opacity: _controller,
@@ -238,90 +248,203 @@ class _HandbookMainPageState extends State<HandbookMainPage>
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
 
-            /// CONTENT
-            ...grouped.entries.map((chapterEntry) {
-              final chapterTitle = chapterEntry.key;
-              final sections = chapterEntry.value;
-              final chapterId = (sections.values.first.isNotEmpty &&
-                      sections.values.first.first.chapterId != null)
-                  ? sections.values.first.first.chapterId
-                  : '';
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Chapter title
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-                      'Chapter ${(chapterId != null && chapterId.toString().isNotEmpty) ? chapterId.toString() + ' - ' : ''}${titleCaseWithAbbr(chapterTitle)}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+            // Card Buttons (Saved Articles | Directories)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Saved Articles Card
+                Expanded(
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                    color: Colors.transparent, // IMPORTANT
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.saved);
+                      },
+                      child: Container(
+                        height: 70,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: const Color(0xFF4FBF8F).withOpacity(0.15),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.25),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            PhosphorIcon(
+                              PhosphorIcons.bookmarkSimple(
+                                PhosphorIconsStyle.fill,
+                              ),
+                              color: const Color(0xFF1F7A5A), // dark green icon
+                              size: 24,
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Saved Articles',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF1F7A5A), // match icon
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
+                ),
+                const SizedBox(width: 15),
 
-                  // Sections
-                  ...sections.entries.map((sectionEntry) {
-                    final articles = sectionEntry.value;
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 6, bottom: 6),
-                          child: Text(
-                            'Section ${(articles.isNotEmpty && articles.first.sectionId != null && articles.first.sectionId.toString().isNotEmpty) ? articles.first.sectionId : sectionEntry.key}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
+                // Directories Card
+                Expanded(
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.directories);
+                      },
+                      child: Container(
+                        height: 70,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: const Color(0xFF4FBF8F).withOpacity(0.15),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.25),
                           ),
                         ),
-
-                        // Articles
-                        ...articles.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final article = entry.value;
-
-                          final animation = Tween<double>(begin: 0, end: 1).animate(
-                            CurvedAnimation(
-                              parent: _controller,
-                              curve: Interval(
-                                (index * 0.05).clamp(0.0, 1.0),
-                                1.0,
-                                curve: Curves.easeOut,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            PhosphorIcon(
+                              PhosphorIcons.folderSimple(
+                                PhosphorIconsStyle.fill,
+                              ),
+                              color: const Color(0xFF1F7A5A),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Directories',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF1F7A5A),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
                               ),
                             ),
-                          );
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
 
-                          return AnimatedBuilder(
-                            animation: animation,
-                            builder: (context, child) {
-                              return Opacity(
-                                opacity: animation.value,
-                                child: Transform.translate(
-                                  offset: Offset(0, 20 * (1 - animation.value)),
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: _buildAnimatedCard(context, article),
-                          );
-                        }),
+            const SizedBox(height: 15),
 
-                        const SizedBox(height: 10),
-                      ],
-                    );
-                  }),
-
-                  const SizedBox(height: 20),
-                ],
-              );
-            }),
+            /// CONTENT
+            for (var i = 0; i < sortedChapterEntries.length; i++)
+              (() {
+                final chapterEntry = sortedChapterEntries[i];
+                final chapterTitle = chapterEntry.key;
+                final sections = chapterEntry.value;
+                final chapterId =
+                    (sections.values.first.isNotEmpty &&
+                        sections.values.first.first.chapterId != null)
+                    ? sections.values.first.first.chapterId
+                    : '';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Chapter ${(chapterId != null && chapterId.toString().isNotEmpty) ? chapterId.toString() + ' - ' : ''}${titleCaseWithAbbr(chapterTitle)}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Sections
+                    ...sections.entries.map((sectionEntry) {
+                      final articles = sectionEntry.value;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6, bottom: 6),
+                            child: Text(
+                              'Section ${(articles.isNotEmpty && articles.first.sectionId != null && articles.first.sectionId.toString().isNotEmpty) ? articles.first.sectionId : sectionEntry.key}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                          // Articles
+                          ...articles.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final article = entry.value;
+                            final animation = Tween<double>(begin: 0, end: 1)
+                                .animate(
+                                  CurvedAnimation(
+                                    parent: _controller,
+                                    curve: Interval(
+                                      (index * 0.05).clamp(0.0, 1.0),
+                                      1.0,
+                                      curve: Curves.easeOut,
+                                    ),
+                                  ),
+                                );
+                            return AnimatedBuilder(
+                              animation: animation,
+                              builder: (context, child) {
+                                return Opacity(
+                                  opacity: animation.value,
+                                  child: Transform.translate(
+                                    offset: Offset(
+                                      0,
+                                      20 * (1 - animation.value),
+                                    ),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: _buildAnimatedCard(context, article),
+                            );
+                          }),
+                          const SizedBox(height: 10),
+                        ],
+                      );
+                    }),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              })(),
           ],
         ),
       ),
@@ -329,65 +452,82 @@ class _HandbookMainPageState extends State<HandbookMainPage>
   }
 
   Widget _buildAnimatedCard(BuildContext context, dynamic article) {
-    String displayTitle = (article.subSectionTitle != null &&
-            article.subSectionTitle != 'N/A')
-        ? article.subSectionTitle
-        : (article.title ?? article.sectionTitle ?? 'Article');
+  String displayTitle =
+      (article.subSectionTitle != null && article.subSectionTitle != 'N/A')
+      ? article.subSectionTitle
+      : (article.title ?? article.sectionTitle ?? 'Article');
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          AppRoutes.article,
-          arguments: {
-            'id': article.id,
-            'title': titleCaseWithAbbr(displayTitle),
-            'content': article.bodyText ?? '',
-          },
-        );
-      },
-      child: AnimatedScale(
-        scale: 1,
-        duration: const Duration(milliseconds: 150),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white, // matches article card vibe
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+  return GestureDetector(
+    onTap: () {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.article,
+        arguments: {
+          'id': article.id,
+          'title': titleCaseWithAbbr(displayTitle),
+          'content': article.bodyText ?? '',
+        },
+      );
+    },
+    child: AnimatedScale(
+      scale: 1,
+      duration: const Duration(milliseconds: 150),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.7), // ✨ glass effect
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            /// ICON CONTAINER
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4FBF8F).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF006633).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.article_outlined,
-                  color: Color(0xFF006633),
+              child: PhosphorIcon(
+                PhosphorIcons.fileText(PhosphorIconsStyle.fill),
+                color: const Color(0xFF1F7A5A),
+                size: 20,
+              ),
+            ),
+
+            const SizedBox(width: 14),
+
+            /// TEXT
+            Expanded(
+              child: Text(
+                titleCaseWithAbbr(displayTitle),
+                maxLines: 2, // ✅ prevents overflow
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F7A5A),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  titleCaseWithAbbr(displayTitle),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-            ],
-          ),
+            ),
+
+            /// CHEVRON (adds polish)
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey.shade400,
+              size: 20,
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

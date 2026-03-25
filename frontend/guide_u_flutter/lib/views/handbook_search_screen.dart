@@ -4,6 +4,7 @@ import '../models/handbook_article.dart';
 import '../routes/app_routes.dart';
 import '../view_models/handbook_search_view_model.dart';
 import 'handbook_bottom_nav_bar.dart';
+import '../widgets/handbook_chatbot_fab.dart';
 
 class HandbookSearchScreen extends StatelessWidget {
   const HandbookSearchScreen({Key? key}) : super(key: key);
@@ -68,6 +69,8 @@ class HandbookSearchScreen extends StatelessWidget {
               ),
             ),
             bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 4),
+            floatingActionButton: const HandbookChatbotFAB(),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           );
         },
       ),

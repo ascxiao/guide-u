@@ -4,34 +4,35 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../view_models/saved_articles_view_model.dart';
 import '../services/local_cache_service.dart';
-// Removed unused import
-  /// Title case with abbreviation support (copied from main page)
-  String titleCaseWithAbbr(String text) {
-    if (text.isEmpty) return text;
+import '../widgets/handbook_chatbot_fab.dart';
 
-    final regex = RegExp(r'\([^)]+\)');
-    final matches = regex.allMatches(text).toList();
+/// Title case with abbreviation support (copied from main page)
+String titleCaseWithAbbr(String text) {
+  if (text.isEmpty) return text;
 
-    // Replace abbreviations with placeholders
-    var modified = text;
-    for (int i = 0; i < matches.length; i++) {
-      modified = modified.replaceFirst(matches[i].group(0)!, '<<$i>>');
-    }
+  final regex = RegExp(r'\([^)]+\)');
+  final matches = regex.allMatches(text).toList();
 
-    // Title-case the rest
-    modified = modified.split(' ').map((word) {
-      if (word.isEmpty) return word;
-      if (word.startsWith('<<') && word.endsWith('>>')) return word; // skip placeholders
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
-
-    // Restore abbreviations
-    for (int i = 0; i < matches.length; i++) {
-      modified = modified.replaceFirst('<<$i>>', matches[i].group(0)!);
-    }
-
-    return modified;
+  // Replace abbreviations with placeholders
+  var modified = text;
+  for (int i = 0; i < matches.length; i++) {
+    modified = modified.replaceFirst(matches[i].group(0)!, '<<$i>>');
   }
+
+  // Title-case the rest
+  modified = modified.split(' ').map((word) {
+    if (word.isEmpty) return word;
+    if (word.startsWith('<<') && word.endsWith('>>')) return word; // skip placeholders
+    return word[0].toUpperCase() + word.substring(1).toLowerCase();
+  }).join(' ');
+
+  // Restore abbreviations
+  for (int i = 0; i < matches.length; i++) {
+    modified = modified.replaceFirst('<<$i>>', matches[i].group(0)!);
+  }
+
+  return modified;
+}
 
 class HandbookSavedArticlesPage extends StatefulWidget {
   const HandbookSavedArticlesPage({Key? key}) : super(key: key);
@@ -175,7 +176,6 @@ class _HandbookSavedArticlesPageState
                                         ],
                                       ),
                                     ),
-                                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
                                   ],
                                 ),
                               ),
@@ -184,6 +184,8 @@ class _HandbookSavedArticlesPageState
                         );
                       },
                     ),
+          floatingActionButton: const HandbookChatbotFAB(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         );
       },
     );
