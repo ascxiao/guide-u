@@ -538,9 +538,6 @@ class _HandbookIncidentPageState extends State<HandbookIncidentPage> {
           );
         },
       ),
-      bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 3),
-      floatingActionButton: const HandbookChatbotFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
