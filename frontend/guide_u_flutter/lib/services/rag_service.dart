@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -34,6 +35,22 @@ class GuideURagService {
     'all',
   };
 
+  static const List<String> _likelyUnknownSignals = [
+    'rate',
+    'rates',
+    'price',
+    'prices',
+    'rent',
+    'tuition',
+    'fee',
+    'fees',
+    'password',
+    'office hours',
+    'semester',
+    '2026',
+    '2027',
+  ];
+
   GuideURagService() {
     // 1. We KEEP Gemini exclusively for searching the database
     _embeddingModel = GenerativeModel(
@@ -50,22 +67,38 @@ class GuideURagService {
         return refusal;
       }
 
+      final embeddingTimeoutMs = _readEnvInt('RAG_EMBED_TIMEOUT_MS', 7000);
+      final retrievalTimeoutMs = _readEnvInt('RAG_RETRIEVAL_TIMEOUT_MS', 7000);
+
       // Step A: Vectorize the question with Gemini
       final content = Content.text(userQuery);
-      final embedResult = await _embeddingModel.embedContent(content);
+      final embedResult = await _embeddingModel
+          .embedContent(content)
+          .timeout(Duration(milliseconds: embeddingTimeoutMs));
 
       // Step B: Search Supabase
-      final response = await _supabase.rpc(
-        'match_article_embeddings',
-        params: {
-          'query_embedding': embedResult.embedding.values,
-          'match_threshold': 0.45,
-          'match_count': 4,
-        },
-      );
+      final response = await _supabase
+          .rpc(
+            'match_article_embeddings',
+            params: {
+              'query_embedding': embedResult.embedding.values,
+              'match_threshold': 0.45,
+              'match_count': 4,
+            },
+          )
+          .timeout(Duration(milliseconds: retrievalTimeoutMs));
 
       final List<dynamic> retrievedChunks = response as List<dynamic>;
       if (retrievedChunks.isEmpty) {
+        final fallback = _buildNoAnswerFallback();
+        _appendHistory(userQuery, fallback);
+        return fallback;
+      }
+
+      final likelyUnknownQuery = _looksLikeLikelyUnknownQuery(userQuery);
+      final bestOverlapRatio = _bestOverlapRatio(userQuery, retrievedChunks);
+
+      if (likelyUnknownQuery && bestOverlapRatio < 0.55) {
         final fallback = _buildNoAnswerFallback();
         _appendHistory(userQuery, fallback);
         return fallback;
@@ -149,16 +182,27 @@ class GuideURagService {
       // Step E: Parse the Groq response
       if (groqResponse.statusCode == 200) {
         final data = jsonDecode(groqResponse.body);
-        final finalAnswer = data['choices'][0]['message']['content'];
+        var finalAnswer = data['choices'][0]['message']['content'] as String;
+
+        // Keep unknown-question behavior deterministic when retrieval confidence is weak.
+        if (likelyUnknownQuery &&
+            bestOverlapRatio < 0.60 &&
+            !_responseAcknowledgesUnknown(finalAnswer)) {
+          finalAnswer = _buildNoAnswerFallback();
+        }
 
         _appendHistory(userQuery, finalAnswer);
 
         return finalAnswer;
       } else {
-        return "Groq API Error: ${groqResponse.body}";
+        final fallback = _buildTransientFailureFallback();
+        _appendHistory(userQuery, fallback);
+        return fallback;
       }
     } catch (e) {
-      return "An error occurred: $e";
+      final fallback = _buildTransientFailureFallback();
+      _appendHistory(userQuery, fallback);
+      return fallback;
     }
   }
 
@@ -172,6 +216,15 @@ class GuideURagService {
 I couldn't find this information explicitly in the provided handbook excerpts.
 
 Please try rephrasing your question or ask about another handbook topic.
+'''
+        .trim();
+  }
+
+  String _buildTransientFailureFallback() {
+    return '''
+I couldn't find this information explicitly in the provided handbook excerpts right now, or it is currently not available.
+
+Please try again in a moment or ask about another handbook topic.
 '''
         .trim();
   }
@@ -208,6 +261,23 @@ I can only answer handbook-related questions using the provided excerpts.
       return true;
     }
 
+    final bestOverlap = _bestOverlapCount(query, chunks, queryTokens);
+    final overlapRatio = bestOverlap / queryTokens.length;
+    final minOverlap = queryTokens.length >= 5 ? 2 : 1;
+    final minRatio = queryTokens.length >= 5 ? 0.34 : 0.2;
+    return bestOverlap >= minOverlap && overlapRatio >= minRatio;
+  }
+
+  int _bestOverlapCount(
+    String query,
+    List<dynamic> chunks,
+    Set<String>? precomputedQueryTokens,
+  ) {
+    final queryTokens = precomputedQueryTokens ?? _meaningfulTokens(query);
+    if (queryTokens.isEmpty) {
+      return 0;
+    }
+
     var bestOverlap = 0;
 
     for (final chunk in chunks.take(3)) {
@@ -225,10 +295,33 @@ I can only answer handbook-related questions using the provided excerpts.
       }
     }
 
-    final overlapRatio = bestOverlap / queryTokens.length;
-    final minOverlap = queryTokens.length >= 5 ? 2 : 1;
-    final minRatio = queryTokens.length >= 5 ? 0.34 : 0.2;
-    return bestOverlap >= minOverlap && overlapRatio >= minRatio;
+    return bestOverlap;
+  }
+
+  double _bestOverlapRatio(String query, List<dynamic> chunks) {
+    final queryTokens = _meaningfulTokens(query);
+    if (queryTokens.isEmpty) {
+      return 0.0;
+    }
+
+    final overlap = _bestOverlapCount(query, chunks, queryTokens);
+    return overlap / queryTokens.length;
+  }
+
+  bool _looksLikeLikelyUnknownQuery(String query) {
+    final lowered = query.toLowerCase();
+    return _likelyUnknownSignals.any(lowered.contains);
+  }
+
+  bool _responseAcknowledgesUnknown(String response) {
+    final lowered = response.toLowerCase();
+    return lowered.contains('not in') ||
+        lowered.contains('couldn\'t find') ||
+        lowered.contains('not explicitly') ||
+        lowered.contains('not available') ||
+        lowered.contains('i do not have') ||
+        lowered.contains('i don\'t have') ||
+        lowered.contains('unable to find');
   }
 
   Set<String> _meaningfulTokens(String text) {
@@ -246,16 +339,27 @@ I can only answer handbook-related questions using the provided excerpts.
     String body,
   ) async {
     final maxAttempts =
-        int.tryParse(dotenv.env['RAG_GROQ_MAX_RETRIES'] ?? '') ?? 4;
+        int.tryParse(dotenv.env['RAG_GROQ_MAX_RETRIES'] ?? '') ?? 2;
     final baseDelayMs =
-        int.tryParse(dotenv.env['RAG_GROQ_RETRY_DELAY_MS'] ?? '') ?? 1500;
+        int.tryParse(dotenv.env['RAG_GROQ_RETRY_DELAY_MS'] ?? '') ?? 900;
+    final perAttemptTimeoutMs =
+        int.tryParse(dotenv.env['RAG_GROQ_TIMEOUT_MS'] ?? '') ?? 8000;
+    final totalTimeoutMs =
+        int.tryParse(dotenv.env['RAG_GROQ_TOTAL_TIMEOUT_MS'] ?? '') ?? 15000;
 
     http.Response? lastResponse;
     Object? lastError;
+    final watch = Stopwatch()..start();
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (watch.elapsedMilliseconds >= totalTimeoutMs) {
+        throw TimeoutException('Groq total retry budget exceeded.');
+      }
+
       try {
-        final response = await http.post(url, headers: headers, body: body);
+        final response = await http
+            .post(url, headers: headers, body: body)
+            .timeout(Duration(milliseconds: perAttemptTimeoutMs));
         lastResponse = response;
 
         if (response.statusCode == 200 ||
@@ -270,10 +374,19 @@ I can only answer handbook-related questions using the provided excerpts.
         final retryAfterSeconds = _parseRetryAfterSeconds(
           lastResponse?.headers['retry-after'],
         );
-        final waitMs = [
+        var waitMs = [
           baseDelayMs * attempt,
           retryAfterSeconds * 1000,
         ].reduce((a, b) => a > b ? a : b);
+
+        final remainingBudgetMs = totalTimeoutMs - watch.elapsedMilliseconds;
+        if (remainingBudgetMs <= 0) {
+          throw TimeoutException('Groq total retry budget exceeded.');
+        }
+        if (waitMs > remainingBudgetMs) {
+          waitMs = remainingBudgetMs;
+        }
+
         await Future.delayed(Duration(milliseconds: waitMs));
       }
     }
@@ -303,6 +416,15 @@ I can only answer handbook-related questions using the provided excerpts.
       return 0;
     }
 
+    return parsed;
+  }
+
+  int _readEnvInt(String key, int fallback) {
+    final raw = dotenv.env[key];
+    final parsed = raw == null ? null : int.tryParse(raw);
+    if (parsed == null || parsed <= 0) {
+      return fallback;
+    }
     return parsed;
   }
 }
