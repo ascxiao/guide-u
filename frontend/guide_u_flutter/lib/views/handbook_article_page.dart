@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../view_models/saved_articles_view_model.dart';
 import '../widgets/handbook_chatbot_fab.dart';
 
@@ -59,11 +60,7 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
   }
 
   Widget _buildFormattedContent(String content) {
-    // Normalize line breaks just in case
-    content = content
-        .replaceAll(r'\n', ' ')
-        .replaceAll('\r\n', ' ')
-        .trim();
+    content = content.replaceAll(r'\n', ' ').replaceAll('\r\n', ' ').trim();
 
     final sentences = content.split(RegExp(r'(?<=[.?!])\s+'));
 
@@ -88,11 +85,10 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
               textAlign: TextAlign.justify,
               text: TextSpan(
                 children: [
-                  const WidgetSpan(
-                    child: SizedBox(width: 24),
-                  ),
+                  // Indent first line using a WidgetSpan with a SizedBox
+                  const WidgetSpan(child: SizedBox(width: 32)),
                   TextSpan(
-                    text: para,
+                    text: para.trimLeft(),
                     style: const TextStyle(
                       fontSize: 16,
                       height: 1.8,
@@ -109,12 +105,14 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
 
   @override
   Widget build(BuildContext context) {
+    const mainGreen = Color(0xFF1F7A5A);
+
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 248, 251, 245),
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF006633),
+        foregroundColor: mainGreen,
         centerTitle: false,
         actions: [
           IconButton(
@@ -126,12 +124,11 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
                   )
                 : Icon(
                     _isSaved
-                        ? Icons.bookmark
-                        : Icons.bookmark_border,
+                        ? PhosphorIcons.bookmarkSimple(PhosphorIconsStyle.fill)
+                        : PhosphorIcons.bookmarkSimple(),
                   ),
-            tooltip:
-                _isSaved ? 'Remove Bookmark' : 'Save Article',
-            color: const Color(0xFF006633),
+            tooltip: _isSaved ? 'Remove Bookmark' : 'Save Article',
+            color: mainGreen,
             onPressed: _loading ? null : _toggleBookmark,
           ),
         ],
@@ -141,36 +138,32 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 👑 Article Heading
+            // Article Title
             Text(
               widget.articleTitle,
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF006633),
+                color: mainGreen,
                 height: 1.3,
               ),
             ),
             const SizedBox(height: 16),
-            // 📝 Content Card
+
+            // Content Card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: _buildFormattedContent(widget.articleContent),
             ),
           ],
         ),
       ),
+
+      // FAB
       floatingActionButton: const HandbookChatbotFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );

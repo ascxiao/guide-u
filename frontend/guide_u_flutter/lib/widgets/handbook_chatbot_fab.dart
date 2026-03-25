@@ -50,7 +50,7 @@ class _HandbookChatbotFABState extends State<HandbookChatbotFAB>
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color.fromARGB(255, 247, 249, 227),
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
