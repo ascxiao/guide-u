@@ -19,6 +19,11 @@ class _HandbookMainPageState extends State<HandbookMainPage>
   Timer? _autoSlideTimer;
   // Controller for the header slideshow
   final PageController _headerPageController = PageController();
+  static const List<String> _headerImagePaths = [
+    'assets/images/usls_header.jpg',
+    'assets/images/usls_header2.jpg',
+    'assets/images/usls_header3.jpg',
+  ];
   int _headerPageIndex = 0;
   late AnimationController _controller;
 
@@ -35,8 +40,9 @@ class _HandbookMainPageState extends State<HandbookMainPage>
     _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (!mounted) return;
       if (!_headerPageController.hasClients) return;
+      if (_headerImagePaths.isEmpty) return;
 
-      final nextPage = (_headerPageIndex + 1) % 3;
+      final nextPage = (_headerPageIndex + 1) % _headerImagePaths.length;
       _headerPageController.animateToPage(
         nextPage,
         duration: const Duration(milliseconds: 500),
@@ -232,22 +238,19 @@ class _HandbookMainPageState extends State<HandbookMainPage>
                             children: [
                               PageView.builder(
                                 controller: _headerPageController,
-                                itemCount: 3, // Number of slides
+                                itemCount: _headerImagePaths.length,
                                 onPageChanged: (index) {
                                   setState(() {
                                     _headerPageIndex = index;
                                   });
                                 },
                                 itemBuilder: (context, index) {
-                                  final imagePaths = [
-                                    'assets/images/usls_header.jpg',
-                                    'assets/images/usls_header2.jpg',
-                                    'assets/images/usls_header3.jpg',
-                                  ];
                                   return Container(
                                     decoration: BoxDecoration(
                                       image: DecorationImage(
-                                        image: AssetImage(imagePaths[index]),
+                                        image: AssetImage(
+                                          _headerImagePaths[index],
+                                        ),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -300,7 +303,7 @@ class _HandbookMainPageState extends State<HandbookMainPage>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
-                          3,
+                          _headerImagePaths.length,
                           (index) => AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             margin: const EdgeInsets.symmetric(horizontal: 4),
