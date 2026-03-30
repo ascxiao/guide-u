@@ -51,6 +51,18 @@ create table saved_articles (
 
 
 -- ===============================
+-- ARTICLE VIEW EVENTS
+-- ===============================
+create table article_view_events (
+    id uuid primary key default uuid_generate_v4(),
+    article_id uuid not null references articles(id) on delete cascade,
+    user_id uuid not null references auth.users(id) on delete cascade,
+    source text default 'mobile_app',
+    opened_at timestamp with time zone default now()
+);
+
+
+-- ===============================
 -- INCIDENT REPORTS
 -- ===============================
 create table incident_reports (
@@ -113,10 +125,36 @@ create table admins (
 -- ===============================
 create index idx_articles_section on articles(section_id);
 create index idx_saved_articles_user on saved_articles(user_id);
+create index idx_article_view_events_article on article_view_events(article_id);
+create index idx_article_view_events_user on article_view_events(user_id);
+create index idx_article_view_events_opened_at on article_view_events(opened_at desc);
 create index idx_incident_reports_user on incident_reports(user_id);
 create index idx_lost_found_user on lost_found_reports(user_id);
 create index article_embeddings_idx on article_embeddings
     using ivfflat (embedding vector_cosine_ops);
+
+
+-- ===============================
+-- TABLE RLS: ARTICLE VIEW EVENTS
+-- ===============================
+alter table article_view_events enable row level security;
+
+create policy "Users can create own article view events"
+on article_view_events for insert to authenticated
+with check (auth.uid() = user_id);
+
+create policy "Users can read own article view events"
+on article_view_events for select to authenticated
+using (auth.uid() = user_id);
+
+create policy "Admins can manage all article view events"
+on article_view_events for all to authenticated
+using (
+    exists (select 1 from admins where admins.user_id = auth.uid())
+)
+with check (
+    exists (select 1 from admins where admins.user_id = auth.uid())
+);
 
 
 -- ===============================

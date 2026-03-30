@@ -24,12 +24,21 @@ class HandbookArticlePage extends StatefulWidget {
 class _HandbookArticlePageState extends State<HandbookArticlePage> {
   bool _isSaved = false;
   bool _loading = false;
+  bool _hasTrackedOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_trackArticleOpen);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final savedArticlesVM =
-        Provider.of<SavedArticlesViewModel>(context, listen: false);
+    final savedArticlesVM = Provider.of<SavedArticlesViewModel>(
+      context,
+      listen: false,
+    );
 
     if (widget.articleId != null) {
       _isSaved = savedArticlesVM.isArticleSaved(widget.articleId!);
@@ -41,11 +50,12 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
 
     setState(() => _loading = true);
 
-    final savedArticlesVM =
-        Provider.of<SavedArticlesViewModel>(context, listen: false);
+    final savedArticlesVM = Provider.of<SavedArticlesViewModel>(
+      context,
+      listen: false,
+    );
 
-    final userId =
-        Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
 
     if (_isSaved) {
       await savedArticlesVM.removeSavedArticle(userId, widget.articleId!);
@@ -57,6 +67,25 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
       _isSaved = !_isSaved;
       _loading = false;
     });
+  }
+
+  Future<void> _trackArticleOpen() async {
+    if (_hasTrackedOpen || widget.articleId == null) return;
+
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    _hasTrackedOpen = true;
+
+    try {
+      await Supabase.instance.client.from('article_view_events').insert({
+        'article_id': widget.articleId,
+        'user_id': user.id,
+        'source': 'mobile_app',
+      });
+    } catch (_) {
+      // Keep article reading flow uninterrupted if tracking fails.
+    }
   }
 
   // ✅ NEW SMART FORMATTER
@@ -118,8 +147,7 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("• ",
-                    style: TextStyle(fontSize: 16, height: 1.6)),
+                const Text("• ", style: TextStyle(fontSize: 16, height: 1.6)),
                 Expanded(
                   child: Text(
                     text,
@@ -135,7 +163,6 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
           ),
         );
       }
-
       // 🔹 NUMBERED LIST
       else if (RegExp(r'^\d+\.\s+').hasMatch(line)) {
         final text = line.replaceFirst(RegExp(r'^\d+\.\s+'), '');
@@ -146,8 +173,10 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("$numberIndex. ",
-                    style: const TextStyle(fontSize: 16, height: 1.6)),
+                Text(
+                  "$numberIndex. ",
+                  style: const TextStyle(fontSize: 16, height: 1.6),
+                ),
                 Expanded(
                   child: Text(
                     text,
@@ -165,7 +194,6 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
 
         numberIndex++;
       }
-
       // 🔹 PARAGRAPH
       else {
         flushLists();
