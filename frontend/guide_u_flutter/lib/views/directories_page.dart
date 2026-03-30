@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'handbook_bottom_nav_bar.dart';
+import '../models/student_government.dart';
 
 class DirectoryItem {
   final String name;
@@ -24,8 +24,70 @@ class DirectoriesPage extends StatefulWidget {
   State<DirectoriesPage> createState() => _DirectoriesPageState();
 }
 
-class _DirectoriesPageState extends State<DirectoriesPage> {
+class _DirectoriesPageState extends State<DirectoriesPage>
+    with SingleTickerProviderStateMixin {
+  Widget _buildStudentGovItem(StudentGovernmentMember member) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6F4EF),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.account_circle,
+              color: Color(0xFF1F7A5A),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  member.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  member.position,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String searchQuery = '';
+
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   final List<DirectoryCategory> categories = [
     DirectoryCategory(
@@ -47,7 +109,11 @@ class _DirectoriesPageState extends State<DirectoriesPage> {
     DirectoryCategory(
       title: "Libraries & Labs",
       items: [
-        DirectoryItem(name: "Library Circulation", icm: "131", pldt: "432-3626"),
+        DirectoryItem(
+          name: "Library Circulation",
+          icm: "131",
+          pldt: "432-3626",
+        ),
         DirectoryItem(name: "Science Lab", icm: "164", pldt: "434-1730"),
       ],
     ),
@@ -57,36 +123,54 @@ class _DirectoriesPageState extends State<DirectoriesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F4F4),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(75),
-        child: Container(
+
+      // ✅ CLEAN APPBAR (gradient stays here ONLY)
+      appBar: AppBar(
+        automaticallyImplyLeading: true,
+        elevation: 0,
+        title: const Text(
+          'Directories',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        foregroundColor: Colors.white,
+        flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFF1F7A5A), Color(0xFF4FBF8F)],
-              stops: [0.2, 1.0],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
-          child: AppBar(
-            automaticallyImplyLeading: true,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            title: const Text(
-              'Directories',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            centerTitle: true,
-            foregroundColor: Colors.white,
-            iconTheme: const IconThemeData(color: Colors.white),
-          ),
         ),
       ),
+
       body: Column(
         children: [
-          // 🔍 Search bar (matches your UI softness)
+          // ✅ WHITE TAB BAR (separate from gradient)
+          Material(
+            color: Colors.white,
+            elevation: 2,
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: const Color(0xFF1F7A5A),
+              indicatorWeight: 3,
+              labelColor: const Color(0xFF1F7A5A),
+              unselectedLabelColor: Colors.black54,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              tabs: const [
+                Tab(text: 'Campus Services'),
+                Tab(text: 'Student Government'),
+              ],
+            ),
+          ),
+
+          // 🔍 Search Bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -106,44 +190,78 @@ class _DirectoriesPageState extends State<DirectoriesPage> {
             ),
           ),
 
-          // 📇 Content
+          // 📇 CONTENT
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: categories.map((category) {
-                final filtered = category.items.where((item) {
-                  return item.name.toLowerCase().contains(searchQuery);
-                }).toList();
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Campus Services
+                ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  children: categories.map((category) {
+                    final filtered = category.items.where((item) {
+                      return item.name.toLowerCase().contains(searchQuery);
+                    }).toList();
 
-                if (filtered.isEmpty) return const SizedBox();
+                    if (filtered.isEmpty) return const SizedBox();
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 🏷 Section title (like "Section 1.1")
-                    Padding(
-                      padding: const EdgeInsets.only(top: 18, bottom: 8),
-                      child: Text(
-                        category.title,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black45,
-                          fontWeight: FontWeight.w500,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 18, bottom: 8),
+                          child: Text(
+                            category.title,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black45,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                        ...filtered.map((item) => _buildItem(item)),
+                      ],
+                    );
+                  }).toList(),
+                ),
 
-                    // 📄 Items
-                    ...filtered.map((item) => _buildItem(item)),
-                  ],
-                );
-              }).toList(),
+                // Student Government
+                ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  children: studentGovernmentGroups.map((group) {
+                    final filtered = group.members.where((member) {
+                      return member.name.toLowerCase().contains(searchQuery) ||
+                          member.position.toLowerCase().contains(searchQuery);
+                    }).toList();
+
+                    if (filtered.isEmpty) return const SizedBox();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 18, bottom: 8),
+                          child: Text(
+                            group.title,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black45,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        ...filtered.map(
+                          (member) => _buildStudentGovItem(member),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
           ),
         ],
       ),
-
-      bottomNavigationBar: const HandbookBottomNavBar(currentIndex: 2),
     );
   }
 
@@ -157,7 +275,6 @@ class _DirectoriesPageState extends State<DirectoriesPage> {
       ),
       child: Row(
         children: [
-          // Icon bubble (matches your cards)
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -170,10 +287,7 @@ class _DirectoriesPageState extends State<DirectoriesPage> {
               size: 18,
             ),
           ),
-
           const SizedBox(width: 14),
-
-          // Texts
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
