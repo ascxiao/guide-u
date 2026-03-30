@@ -1,45 +1,102 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+# =========================
+# Environment & Secrets
+# =========================
+.env
+.env.*
+*.env
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
+# =========================
+# Next.js
+# =========================
+.next/
+out/
+build/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# =========================
+# Node
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# =========================
+# Flutter / Dart
+# =========================
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-/coverage/
+.packages
+*.iml
+**/build/
+ios/.symlinks/
+ios/Pods/
+android/.gradle/
+android/local.properties
+android/key.properties
+**/*.g.dart
+**/*.freezed.dart
 
-# Symbolication related
-app.*.symbols
+# =========================
+# Python / Backend
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
 
-# Obfuscation related
-app.*.map.json
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# =========================
+# Editor & IDE
+# =========================
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =========================
+# Logs & Debug
+# =========================
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# =========================
+# Misc / Build artifacts
+# =========================
+.cache/
+.turbo/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+*.filecache
+*.stamp
+*.app.dill

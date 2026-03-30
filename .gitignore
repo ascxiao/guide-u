@@ -1,41 +1,102 @@
-# Python/Backend
+# =========================
+# Environment & Secrets
+# =========================
+.env
+.env.*
+*.env
 backend/.env
 backend/.env.*
-backend/__pycache__/
-backend/*.pyc
-backend/.venv/
-backend/venv/
-backend/.mypy_cache/
-backend/.pytest_cache/
-backend/.DS_Store
+frontend/.env
+frontend/.env.*
 
-# Flutter/Frontend
-frontend/guide_u_flutter/.env
-frontend/guide_u_flutter/.env.*
-frontend/guide_u_flutter/.dart_tool/
-frontend/guide_u_flutter/.idea/
-frontend/guide_u_flutter/.packages
-frontend/guide_u_flutter/build/
-frontend/guide_u_flutter/ios/Flutter/Flutter.framework
-frontend/guide_u_flutter/ios/Flutter/Flutter.podspec
-frontend/guide_u_flutter/ios/Flutter/Generated.xcconfig
-frontend/guide_u_flutter/ios/Flutter/ephemeral/
-frontend/guide_u_flutter/ios/Pods/
-frontend/guide_u_flutter/ios/Runner.xcworkspace/
-frontend/guide_u_flutter/ios/Runner.xcodeproj/project.xcworkspace/
-frontend/guide_u_flutter/macos/Flutter/ephemeral/
-frontend/guide_u_flutter/macos/Pods/
-frontend/guide_u_flutter/macos/Runner.xcworkspace/
-frontend/guide_u_flutter/macos/Runner.xcodeproj/project.xcworkspace/
-frontend/guide_u_flutter/linux/flutter/ephemeral/
-frontend/guide_u_flutter/linux/build/
-frontend/guide_u_flutter/windows/flutter/ephemeral/
-frontend/guide_u_flutter/windows/build/
-frontend/guide_u_flutter/web/.dart_tool/
+# =========================
+# Next.js
+# =========================
+.next/
+out/
+build/
 
-# System files
+# =========================
+# Node
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# =========================
+# Flutter / Dart
+# =========================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+*.iml
+**/build/
+ios/.symlinks/
+ios/Pods/
+android/.gradle/
+android/local.properties
+android/key.properties
+**/*.g.dart
+**/*.freezed.dart
+
+# =========================
+# Python / Backend
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+
+# =========================
+# OS files
+# =========================
 .DS_Store
 Thumbs.db
-*.swp
-*.swo
-docs/rulesets/
+desktop.ini
+
+# =========================
+# Editor & IDE
+# =========================
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =========================
+# Logs & Debug
+# =========================
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# =========================
+# Misc / Build artifacts
+# =========================
+.cache/
+.turbo/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+*.filecache
+*.stamp
+*.app.dill
