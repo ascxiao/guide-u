@@ -26,49 +26,179 @@ class DirectoriesPage extends StatefulWidget {
 
 class _DirectoriesPageState extends State<DirectoriesPage>
     with SingleTickerProviderStateMixin {
-  Widget _buildStudentGovItem(StudentGovernmentMember member) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6F4EF),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.account_circle,
-              color: Color(0xFF1F7A5A),
-              size: 18,
-            ),
+  void _showDetailsDialog({
+    required String title,
+    required IconData icon,
+    required List<MapEntry<String, String>> details,
+  }) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  member.name,
+          titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+          contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          actionsPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE6F4EF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: const Color(0xFF1F7A5A), size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
                   style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  member.position,
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: details
+                .map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 84,
+                          child: Text(
+                            entry.key,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            entry.value,
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showOfficeDetails(DirectoryItem item) {
+    final details = <MapEntry<String, String>>[
+      MapEntry('Office', item.name),
+      MapEntry('ICM', item.icm.isNotEmpty ? item.icm : 'Not available'),
+      MapEntry('PLDT', item.pldt.isNotEmpty ? item.pldt : 'Not available'),
+    ];
+
+    _showDetailsDialog(
+      title: 'Office Contact Details',
+      icon: Icons.local_phone,
+      details: details,
+    );
+  }
+
+  void _showStudentGovDetails(StudentGovernmentMember member) {
+    final details = <MapEntry<String, String>>[
+      MapEntry('Name', member.name),
+      MapEntry('Position', member.position),
+      MapEntry('Branch', member.group),
+    ];
+
+    _showDetailsDialog(
+      title: 'Student Government',
+      icon: Icons.account_circle,
+      details: details,
+    );
+  }
+
+  Widget _buildTile({
+    required Widget leading,
+    required String title,
+    required Widget subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            children: [
+              leading,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    subtitle,
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 18, color: Colors.black38),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStudentGovItem(StudentGovernmentMember member) {
+    return _buildTile(
+      onTap: () => _showStudentGovDetails(member),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE6F4EF),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(
+          Icons.account_circle,
+          color: Color(0xFF1F7A5A),
+          size: 18,
+        ),
+      ),
+      title: member.name,
+      subtitle: Text(
+        member.position,
+        style: const TextStyle(fontSize: 12, color: Colors.black54),
       ),
     );
   }
@@ -266,65 +396,35 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   }
 
   Widget _buildItem(DirectoryItem item) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+    return _buildTile(
+      onTap: () => _showOfficeDetails(item),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE6F4EF),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: PhosphorIcon(
+          PhosphorIcons.phone(PhosphorIconsStyle.fill),
+          color: const Color(0xFF1F7A5A),
+          size: 18,
+        ),
       ),
-      child: Row(
+      title: item.name,
+      subtitle: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6F4EF),
-              borderRadius: BorderRadius.circular(14),
+          if (item.icm.isNotEmpty)
+            Text(
+              'ICM ${item.icm}',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
-            child: PhosphorIcon(
-              PhosphorIcons.phone(PhosphorIconsStyle.fill),
-              color: const Color(0xFF1F7A5A),
-              size: 18,
+          if (item.icm.isNotEmpty && item.pldt.isNotEmpty)
+            const SizedBox(width: 8),
+          if (item.pldt.isNotEmpty)
+            Text(
+              'PLDT ${item.pldt}',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (item.icm.isNotEmpty)
-                      Text(
-                        "ICM ${item.icm}",
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    if (item.icm.isNotEmpty && item.pldt.isNotEmpty)
-                      const SizedBox(width: 8),
-                    if (item.pldt.isNotEmpty)
-                      Text(
-                        "PLDT ${item.pldt}",
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black54,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
