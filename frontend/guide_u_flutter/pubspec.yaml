@@ -68,6 +68,8 @@ flutter:
   # the material Icons class.
   assets:
     - assets/images/usls_header.jpg
+    - assets/images/usls_header2.jpg
+    - assets/images/usls_header3.jpg
     - assets/images/Folder.png
     - assets/images/IconguideU.png
     - assets/images/IconTypo.png

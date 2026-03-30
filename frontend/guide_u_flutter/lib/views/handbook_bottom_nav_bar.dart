@@ -75,19 +75,19 @@ class _NavBarButton extends StatelessWidget {
               color: selected ? mainGreen : inactiveColor,
               size: 26,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
                 color: selected ? mainGreen : inactiveColor,
                 fontWeight:
                     selected ? FontWeight.w600 : FontWeight.w400,
-                fontSize: 11,
+                fontSize: 10,
               ),
             ),
 
             /// ✨ THIN INDICATOR (instead of full background)
-            const SizedBox(height: 6),
+            const SizedBox(height: 3),
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               height: 3,
@@ -135,7 +135,7 @@ class HandbookBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Container(
-        height: 70,
+        height: 60,
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(

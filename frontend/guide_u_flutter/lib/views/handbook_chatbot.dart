@@ -83,6 +83,15 @@ class _HandbookChatbotBodyState extends State<_HandbookChatbotBody>
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Clear conversation',
+            icon: const Icon(Icons.delete_outline, color: Color(0xFF27AE60)),
+            onPressed: () {
+              Provider.of<HandbookChatbotViewModel>(context, listen: false).clearMessages();
+            },
+          ),
+        ],
       ),
 
       body: SafeArea(

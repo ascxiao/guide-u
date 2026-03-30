@@ -58,4 +58,9 @@ class HandbookChatbotViewModel extends ChangeNotifier {
 				lower.contains('plan and billing details') ||
 				lower.contains('limit: 20, model: gemini');
 	}
+
+	void clearMessages() {
+    _messages.clear();
+    notifyListeners();
+  }
 }

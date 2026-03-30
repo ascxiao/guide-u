@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../view_models/handbook_main_view_model.dart';
 import '../widgets/handbook_chatbot_fab.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'dart:async';
 
 class HandbookMainPage extends StatefulWidget {
   const HandbookMainPage({Key? key}) : super(key: key);
@@ -13,8 +14,11 @@ class HandbookMainPage extends StatefulWidget {
   State<HandbookMainPage> createState() => _HandbookMainPageState();
 }
 
-class _HandbookMainPageState extends State<HandbookMainPage>
-    with SingleTickerProviderStateMixin {
+class _HandbookMainPageState extends State<HandbookMainPage> with SingleTickerProviderStateMixin {
+    Timer? _autoSlideTimer;
+  // Controller for the header slideshow
+  final PageController _headerPageController = PageController();
+  int _headerPageIndex = 0;
   late AnimationController _controller;
 
   @override
@@ -25,11 +29,26 @@ class _HandbookMainPageState extends State<HandbookMainPage>
       duration: const Duration(milliseconds: 700),
     );
     _controller.forward();
+
+    // Start auto-slide timer for header slideshow
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (!mounted) return;
+      setState(() {
+        _headerPageIndex = (_headerPageIndex + 1) % 3;
+        _headerPageController.animateToPage(
+          _headerPageIndex,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      });
+    });
   }
 
   @override
   void dispose() {
+    _autoSlideTimer?.cancel();
     _controller.dispose();
+    _headerPageController.dispose();
     super.dispose();
   }
 
@@ -77,14 +96,13 @@ class _HandbookMainPageState extends State<HandbookMainPage>
 
             /// 🔹 APP BAR
             appBar: PreferredSize(
-              preferredSize: const Size.fromHeight(75),
+              preferredSize: const Size.fromHeight(65),
               child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF1F7A5A), Color(0xFF4FBF8F)],
-                    stops: [0.2, 1.0],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    colors: [Color.fromARGB(255, 75, 178, 133), Color(0xFF1F7A5A)],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
                   ),
                 ),
                 child: AppBar(
@@ -92,10 +110,13 @@ class _HandbookMainPageState extends State<HandbookMainPage>
                   backgroundColor: Colors.transparent,
                   elevation: 0,
                   title: SizedBox(
-                    height: 25,
-                    child: Image.asset(
-                      'assets/images/TypoguideU.png',
-                      fit: BoxFit.contain,
+                    height: 22,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8), // Added left padding
+                      child: Image.asset(
+                        'assets/images/TypoguideU.png',
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                   actions: [
@@ -103,13 +124,13 @@ class _HandbookMainPageState extends State<HandbookMainPage>
 
                     /// PROFILE
                     Padding(
-                      padding: const EdgeInsets.only(right: 12),
+                      padding: const EdgeInsets.only(right: 24),
                       child: GestureDetector(
                         onTap: () {
                           Navigator.pushNamed(context, AppRoutes.profile);
                         },
                         child: CircleAvatar(
-                          radius: 18,
+                          radius: 15,
                           backgroundColor: Colors.white,
                           child: const Icon(
                             Icons.person,
@@ -183,70 +204,103 @@ class _HandbookMainPageState extends State<HandbookMainPage>
           begin: const Offset(0, 0.05),
           end: Offset.zero,
         ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut)),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-          children: [
-            /// HEADER
-            FadeTransition(
-              opacity: _controller,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, -0.1),
-                  end: Offset.zero,
-                ).animate(_controller),
-                child: Container(
-                  height: 180,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    image: const DecorationImage(
-                      image: AssetImage('assets/images/usls_header.jpg'),
-                      fit: BoxFit.cover,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 15,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  margin: const EdgeInsets.symmetric(horizontal: 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.black.withOpacity(0.55),
-                          Colors.black.withOpacity(0.2),
-                        ],
-                        begin: Alignment.bottomLeft,
-                        end: Alignment.topRight,
-                      ),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          "Welcome to GuideU",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(0, 16, 0, 100),
+            children: [
+              /// HEADER SLIDESHOW
+              StatefulBuilder(
+                builder: (context, setState) {
+                  return Column(
+                    children: [
+                      SizedBox(
+                        height: 180,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Stack(
+                            children: [
+                              PageView.builder(
+                                controller: _headerPageController,
+                                itemCount: 3, // Number of slides
+                                onPageChanged: (index) {
+                                  setState(() {
+                                    _headerPageIndex = index;
+                                  });
+                                },
+                                itemBuilder: (context, index) {
+                                  final imagePaths = [
+                                    'assets/images/usls_header.jpg',
+                                    'assets/images/usls_header2.jpg',
+                                    'assets/images/usls_header3.jpg',
+                                  ];
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                        image: AssetImage(imagePaths[index]),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.black.withOpacity(0.55),
+                                            Colors.black.withOpacity(0.2),
+                                          ],
+                                          begin: Alignment.bottomLeft,
+                                          end: Alignment.topRight,
+                                        ),
+                                      ),
+                                      child: const Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            "Welcome to GuideU",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 6),
+                                          Text(
+                                            "University of St. La Salle Handbook",
+                                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Optional: Add left/right arrows if you want
+                            ],
                           ),
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          "University of St. La Salle Handbook",
-                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(3, (index) =>
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: _headerPageIndex == index ? 16 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _headerPageIndex == index ? const Color(0xFF1F7A5A) : Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ),
 
             const SizedBox(height: 15),
 
@@ -448,6 +502,7 @@ class _HandbookMainPageState extends State<HandbookMainPage>
           ],
         ),
       ),
+      )
     );
   }
 
@@ -513,7 +568,7 @@ class _HandbookMainPageState extends State<HandbookMainPage>
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1F7A5A),
+                  color: Color.fromARGB(255, 0, 0, 0),
                 ),
               ),
             ),
