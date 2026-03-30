@@ -7,10 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/report_models.dart';
 
 class ReporterDefaults {
-  ReporterDefaults({
-    required this.email,
-    required this.studentId,
-  });
+  ReporterDefaults({required this.email, required this.studentId});
 
   final String email;
   final String studentId;
@@ -18,12 +15,15 @@ class ReporterDefaults {
 
 class ReportingService {
   ReportingService({SupabaseClient? client})
-      : _supabase = client ?? Supabase.instance.client;
+    : _supabase = client ?? Supabase.instance.client;
 
   final SupabaseClient _supabase;
 
+  static const String _networkErrorMessage =
+      'Unable to connect to Guide-U services right now. Please check your internet connection and try again.';
+
   Future<ReporterDefaults> getReporterDefaults() async {
-    final user = _supabase.auth.currentUser;
+    final user = _getCurrentUser();
     if (user == null) {
       return ReporterDefaults(email: '', studentId: '');
     }
@@ -38,11 +38,18 @@ class ReportingService {
 
       if (rows.isNotEmpty) {
         final map = Map<String, dynamic>.from(rows.first as Map);
-        studentId = (map['student_id'] ?? map['student_number'] ?? map['id_number'] ?? '')
-            .toString()
-            .trim();
+        studentId =
+            (map['student_id'] ??
+                    map['student_number'] ??
+                    map['id_number'] ??
+                    '')
+                .toString()
+                .trim();
       }
-    } catch (_) {
+    } catch (e) {
+      if (_isNetworkAuthError(e)) {
+        throw Exception(_networkErrorMessage);
+      }
       // Profiles shape is deployment-specific, so missing fields are tolerated.
     }
 
@@ -60,16 +67,24 @@ class ReportingService {
     required String reporterStudentId,
     required List<XFile> images,
   }) async {
-    final user = _supabase.auth.currentUser;
+    final user = _getCurrentUser();
     if (user == null) {
       throw Exception('Please sign in before submitting a report.');
     }
 
-    final imagePaths = await _uploadImages(
-      bucket: 'incident-report-images',
-      userId: user.id,
-      images: images,
-    );
+    List<String> imagePaths;
+    try {
+      imagePaths = await _uploadImages(
+        bucket: 'incident-report-images',
+        userId: user.id,
+        images: images,
+      );
+    } catch (e) {
+      if (_isNetworkAuthError(e)) {
+        throw Exception(_networkErrorMessage);
+      }
+      rethrow;
+    }
 
     try {
       await _supabase.from('incident_reports').insert({
@@ -84,6 +99,11 @@ class ReportingService {
       });
     } on PostgrestException catch (e) {
       throw _friendlyRlsException(e, table: 'incident_reports');
+    } catch (e) {
+      if (_isNetworkAuthError(e)) {
+        throw Exception(_networkErrorMessage);
+      }
+      rethrow;
     }
   }
 
@@ -96,7 +116,7 @@ class ReportingService {
     required String reporterStudentId,
     required List<XFile> images,
   }) async {
-    final user = _supabase.auth.currentUser;
+    final user = _getCurrentUser();
     if (user == null) {
       throw Exception('Please sign in before submitting a report.');
     }
@@ -106,11 +126,19 @@ class ReportingService {
       throw Exception('Report type must be Lost or Found.');
     }
 
-    final imagePaths = await _uploadImages(
-      bucket: 'lost-found-images',
-      userId: user.id,
-      images: images,
-    );
+    List<String> imagePaths;
+    try {
+      imagePaths = await _uploadImages(
+        bucket: 'lost-found-images',
+        userId: user.id,
+        images: images,
+      );
+    } catch (e) {
+      if (_isNetworkAuthError(e)) {
+        throw Exception(_networkErrorMessage);
+      }
+      rethrow;
+    }
 
     try {
       await _supabase.from('lost_found_reports').insert({
@@ -126,32 +154,53 @@ class ReportingService {
       });
     } on PostgrestException catch (e) {
       throw _friendlyRlsException(e, table: 'lost_found_reports');
+    } catch (e) {
+      if (_isNetworkAuthError(e)) {
+        throw Exception(_networkErrorMessage);
+      }
+      rethrow;
     }
   }
 
   Future<List<IncidentReportItem>> fetchMyIncidentReports() async {
-    final user = _supabase.auth.currentUser;
+    final user = _getCurrentUser();
     if (user == null) return const [];
 
-    final response = await _supabase
-        .from('incident_reports')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', ascending: false);
+    dynamic response;
+    try {
+      response = await _supabase
+          .from('incident_reports')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', ascending: false);
+    } catch (e) {
+      if (_isNetworkAuthError(e)) {
+        throw Exception(_networkErrorMessage);
+      }
+      rethrow;
+    }
 
     final rows = List<Map<String, dynamic>>.from(response as List);
     return rows.map(IncidentReportItem.fromJson).toList();
   }
 
   Future<List<LostFoundReportItem>> fetchMyLostFoundReports() async {
-    final user = _supabase.auth.currentUser;
+    final user = _getCurrentUser();
     if (user == null) return const [];
 
-    final response = await _supabase
-        .from('lost_found_reports')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', ascending: false);
+    dynamic response;
+    try {
+      response = await _supabase
+          .from('lost_found_reports')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', ascending: false);
+    } catch (e) {
+      if (_isNetworkAuthError(e)) {
+        throw Exception(_networkErrorMessage);
+      }
+      rethrow;
+    }
 
     final rows = List<Map<String, dynamic>>.from(response as List);
     return rows.map(LostFoundReportItem.fromJson).toList();
@@ -169,7 +218,9 @@ class ReportingService {
       final bytes = await image.readAsBytes();
       final objectPath = _storagePath(userId, image.name);
 
-      await _supabase.storage.from(bucket).uploadBinary(
+      await _supabase.storage
+          .from(bucket)
+          .uploadBinary(
             objectPath,
             bytes,
             fileOptions: FileOptions(
@@ -204,7 +255,10 @@ class ReportingService {
     return trimmed.isEmpty ? null : trimmed;
   }
 
-  Exception _friendlyRlsException(PostgrestException e, {required String table}) {
+  Exception _friendlyRlsException(
+    PostgrestException e, {
+    required String table,
+  }) {
     final message = (e.message).toLowerCase();
     final isRls =
         e.code == '42501' ||
@@ -219,5 +273,25 @@ class ReportingService {
       'Upload blocked by database permissions for $table. '
       'Apply web/src/lib/supabase/mobile_reports_rls_patch.sql in Supabase SQL Editor, then try again.',
     );
+  }
+
+  User? _getCurrentUser() {
+    try {
+      return _supabase.auth.currentUser;
+    } catch (e) {
+      if (_isNetworkAuthError(e)) {
+        throw Exception(_networkErrorMessage);
+      }
+      rethrow;
+    }
+  }
+
+  bool _isNetworkAuthError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('authretryablefetchexception') ||
+        message.contains('failed host lookup') ||
+        message.contains('socketexception') ||
+        message.contains('no address associated with hostname') ||
+        message.contains('clientexception');
   }
 }
