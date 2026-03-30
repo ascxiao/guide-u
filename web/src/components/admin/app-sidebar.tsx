@@ -37,6 +37,11 @@ const navItems = [
     icon: "H",
   },
   {
+    title: "Article Analytics",
+    href: "/admin/article-analytics",
+    icon: "A",
+  },
+  {
     title: "Incident Report",
     href: "/admin/incident-report",
     icon: "I",

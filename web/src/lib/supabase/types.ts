@@ -49,3 +49,11 @@ export interface Article {
   created_at: string
   updated_at: string
 }
+
+export interface ArticleViewEvent {
+  id: string
+  article_id: string
+  user_id: string
+  source: string | null
+  opened_at: string
+}

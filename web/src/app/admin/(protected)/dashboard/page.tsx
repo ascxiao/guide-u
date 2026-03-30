@@ -5,15 +5,24 @@ import { createAdminClient } from "@/lib/supabase/server"
 
 const DASHBOARD_STATS_REVALIDATE_SECONDS = 30
 
+interface RecentArticleOpen {
+  opened_at: string
+  user_id: string
+  title: string | null
+}
+
 const getDashboardStats = unstable_cache(
   async () => {
     const supabase = await createAdminClient()
+    const sevenDaysAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
     const [
       { count: articleCount },
       { count: incidentCount },
       { count: lostFoundCount },
       { count: userCount },
+      articleOpenResult,
+      recentOpensResult,
     ] = await Promise.all([
       supabase.from("articles").select("id", { count: "estimated", head: true }),
       supabase
@@ -26,13 +35,33 @@ const getDashboardStats = unstable_cache(
         .in("status", ["open", "under_review"]),
       // Counting profiles is significantly faster than auth.admin.listUsers in most setups.
       supabase.from("profiles").select("id", { count: "estimated", head: true }),
+      supabase
+        .from("article_view_events")
+        .select("id", { count: "exact", head: true })
+        .gte("opened_at", sevenDaysAgoIso),
+      supabase
+        .from("article_view_events")
+        .select("opened_at,user_id,article:articles(title)")
+        .order("opened_at", { ascending: false })
+        .limit(8),
     ])
+
+    const articleOpen7d = articleOpenResult.error ? 0 : articleOpenResult.count ?? 0
+    const recentArticleOpens: RecentArticleOpen[] = recentOpensResult.error
+      ? []
+      : (recentOpensResult.data ?? []).map((event: any) => ({
+          opened_at: event.opened_at,
+          user_id: event.user_id,
+          title: event.article?.title ?? null,
+        }))
 
     return {
       articleCount: articleCount ?? 0,
       incidentCount: incidentCount ?? 0,
       lostFoundCount: lostFoundCount ?? 0,
       userCount: userCount ?? 0,
+      articleOpen7d,
+      recentArticleOpens,
     }
   },
   ["admin-dashboard-stats"],
@@ -41,6 +70,7 @@ const getDashboardStats = unstable_cache(
 
 const quickActions = [
   { label: "Add Handbook Entry", href: "/admin/handbook", icon: "H", badge: "Handbook" },
+  { label: "View Article Analytics", href: "/admin/article-analytics", icon: "A", badge: "Analytics" },
   { label: "Review Incident Reports", href: "/admin/incident-report", icon: "I", badge: "Incidents" },
   { label: "Manage Lost & Found", href: "/admin/lost-and-found", icon: "L", badge: "Lost & Found" },
 ]
@@ -52,7 +82,14 @@ const systemServices = [
 ]
 
 export default async function DashboardPage() {
-  const { articleCount, incidentCount, lostFoundCount, userCount } = await getDashboardStats()
+  const { articleCount, incidentCount, lostFoundCount, userCount, articleOpen7d, recentArticleOpens } = await getDashboardStats()
+
+  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
 
   const stats = [
     {
@@ -79,6 +116,12 @@ export default async function DashboardPage() {
       description: "Open / Under review",
       icon: "L",
     },
+    {
+      title: "Article Opens (7d)",
+      value: String(articleOpen7d),
+      description: "Tracked mobile article views",
+      icon: "A",
+    },
   ]
 
   return (
@@ -90,7 +133,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map((stat) => (
           <Card key={stat.title} className="bg-white border shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -125,15 +168,38 @@ export default async function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-3">
-                <span className="text-sm font-semibold text-muted-foreground">T</span>
+            {recentArticleOpens.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-3">
+                  <span className="text-sm font-semibold text-muted-foreground">A</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">No recent article opens</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Article opens from the mobile app will appear here.
+                </p>
               </div>
-              <p className="text-sm font-medium text-foreground">No recent activity</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Activity will appear here once data is available.
-              </p>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                {recentArticleOpens.map((event, index) => (
+                  <div
+                    key={`${event.user_id}-${event.opened_at}-${index}`}
+                    className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {event.title ?? "Untitled Article"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        User {event.user_id.slice(0, 8)}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground whitespace-nowrap">
+                      {dateFormatter.format(new Date(event.opened_at))}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
