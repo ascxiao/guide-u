@@ -59,47 +59,140 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
     });
   }
 
+  // ✅ NEW SMART FORMATTER
   Widget _buildFormattedContent(String content) {
-    content = content.replaceAll(r'\n', ' ').replaceAll('\r\n', ' ').trim();
+    // Preserve line breaks properly
+    content = content.replaceAll(r'\n', '\n').replaceAll('\r\n', '\n');
 
-    final sentences = content.split(RegExp(r'(?<=[.?!])\s+'));
+    final lines = content.split('\n');
 
-    List<String> paragraphs = [];
-    String buffer = '';
+    List<Widget> widgets = [];
+    List<Widget> currentBullets = [];
+    List<Widget> currentNumbers = [];
 
-    for (int i = 0; i < sentences.length; i++) {
-      buffer += sentences[i] + ' ';
-      if ((i + 1) % 3 == 0 || i == sentences.length - 1) {
-        paragraphs.add(buffer.trim());
-        buffer = '';
+    int numberIndex = 1;
+
+    void flushLists() {
+      if (currentBullets.isNotEmpty) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: currentBullets,
+            ),
+          ),
+        );
+        currentBullets = [];
+      }
+
+      if (currentNumbers.isNotEmpty) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: currentNumbers,
+            ),
+          ),
+        );
+        currentNumbers = [];
       }
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final para in paragraphs)
+    for (var line in lines) {
+      line = line.trim();
+
+      if (line.isEmpty) {
+        flushLists();
+        continue;
+      }
+
+      // 🔹 BULLET POINTS
+      if (RegExp(r'^[-•*]\s+').hasMatch(line)) {
+        final text = line.replaceFirst(RegExp(r'^[-•*]\s+'), '');
+
+        currentBullets.add(
           Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: RichText(
-              textAlign: TextAlign.justify,
-              text: TextSpan(
-                children: [
-                  // Indent first line using a WidgetSpan with a SizedBox
-                  const WidgetSpan(child: SizedBox(width: 32)),
-                  TextSpan(
-                    text: para.trimLeft(),
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("• ",
+                    style: TextStyle(fontSize: 16, height: 1.6)),
+                Expanded(
+                  child: Text(
+                    text,
                     style: const TextStyle(
                       fontSize: 16,
-                      height: 1.8,
+                      height: 1.6,
                       color: Colors.black87,
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // 🔹 NUMBERED LIST
+      else if (RegExp(r'^\d+\.\s+').hasMatch(line)) {
+        final text = line.replaceFirst(RegExp(r'^\d+\.\s+'), '');
+
+        currentNumbers.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("$numberIndex. ",
+                    style: const TextStyle(fontSize: 16, height: 1.6)),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.6,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        numberIndex++;
+      }
+
+      // 🔹 PARAGRAPH
+      else {
+        flushLists();
+        numberIndex = 1;
+
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              line,
+              textAlign: TextAlign.justify,
+              style: const TextStyle(
+                fontSize: 16,
+                height: 1.8,
+                color: Colors.black87,
               ),
             ),
           ),
-      ],
+        );
+      }
+    }
+
+    flushLists();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
     );
   }
 
@@ -138,7 +231,7 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Article Title
+            // Title
             Text(
               widget.articleTitle,
               style: const TextStyle(
@@ -150,7 +243,7 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
             ),
             const SizedBox(height: 16),
 
-            // Content Card
+            // Content
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -163,7 +256,6 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
         ),
       ),
 
-      // FAB
       floatingActionButton: const HandbookChatbotFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
