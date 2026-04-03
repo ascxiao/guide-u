@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'routes/app_routes.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,6 +12,28 @@ import 'view_models/connectivity_view_model.dart';
 import 'views/handbook_main_page.dart';
 import 'views/login_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+class _MinusTwoTextScaler extends TextScaler {
+  const _MinusTwoTextScaler();
+
+  static const double _minReadableFontSize = 8.0;
+
+  @override
+  double get textScaleFactor => 1.0;
+
+  @override
+  double scale(double fontSize) {
+    return math.max(_minReadableFontSize, fontSize - 2.0);
+  }
+
+  @override
+  TextScaler clamp({
+    double minScaleFactor = 0,
+    double maxScaleFactor = double.infinity,
+  }) {
+    return this;
+  }
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +64,32 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseTextTheme = ThemeData(useMaterial3: true).textTheme;
+    final brandedTextTheme = baseTextTheme.copyWith(
+      displayLarge: GoogleFonts.montserrat(
+        textStyle: baseTextTheme.displayLarge,
+        fontWeight: FontWeight.bold,
+      ),
+      displayMedium: GoogleFonts.montserrat(
+        textStyle: baseTextTheme.displayMedium,
+        fontWeight: FontWeight.w600,
+      ),
+      titleLarge: GoogleFonts.montserrat(
+        textStyle: baseTextTheme.titleLarge,
+        fontWeight: FontWeight.w600,
+      ),
+      titleMedium: GoogleFonts.montserrat(
+        textStyle: baseTextTheme.titleMedium,
+        fontWeight: FontWeight.w500,
+      ),
+      bodyLarge: GoogleFonts.poppins(textStyle: baseTextTheme.bodyLarge),
+      bodyMedium: GoogleFonts.poppins(textStyle: baseTextTheme.bodyMedium),
+      labelLarge: GoogleFonts.montserrat(
+        textStyle: baseTextTheme.labelLarge,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'GuideU Handbook',
@@ -48,22 +97,20 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
-        textTheme: TextTheme(
-          displayLarge: GoogleFonts.montserrat(fontWeight: FontWeight.bold), // headline1
-          displayMedium: GoogleFonts.montserrat(fontWeight: FontWeight.w600), // headline6
-          titleLarge: GoogleFonts.montserrat(fontWeight: FontWeight.w600), // headline5
-          titleMedium: GoogleFonts.montserrat(fontWeight: FontWeight.w500), // headline6
-          bodyLarge: GoogleFonts.poppins(), // bodyText1
-          bodyMedium: GoogleFonts.poppins(), // bodyText2
-          labelLarge: GoogleFonts.montserrat(fontWeight: FontWeight.w600), // buttons
-        ),
+        textTheme: brandedTextTheme,
       ),
-      builder: (context, child) => Stack(
-        children: [
-          child ?? const SizedBox.shrink(),
-          const ConnectivityBanner(),
-        ],
-      ),
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQuery.copyWith(textScaler: const _MinusTwoTextScaler()),
+          child: Stack(
+            children: [
+              child ?? const SizedBox.shrink(),
+              const ConnectivityBanner(),
+            ],
+          ),
+        );
+      },
       home: const AuthGate(),
       onGenerateRoute: AppRoutes.onGenerateRoute,
     );
