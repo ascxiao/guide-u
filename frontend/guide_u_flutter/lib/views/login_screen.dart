@@ -14,7 +14,7 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ChangeNotifierProvider(
-      create: (_) => LoginViewModel()..checkSession(),
+      create: (_) => LoginViewModel(),
       child: Consumer<LoginViewModel>(
         builder: (context, viewModel, _) {
           // Debug log: check session and login state
@@ -184,7 +184,6 @@ class LoginScreen extends StatelessWidget {
                                           : () async {
                                               await viewModel
                                                   .signInWithGoogle();
-                                              viewModel.checkSession();
                                               debugPrint(
                                                 '[LoginScreen] signInWithGoogle pressed',
                                               );
