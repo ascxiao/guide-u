@@ -26,6 +26,12 @@ class DirectoriesPage extends StatefulWidget {
 
 class _DirectoriesPageState extends State<DirectoriesPage>
     with SingleTickerProviderStateMixin {
+  static const Color _brandMain = Color(0xFF1F7A5A);
+  static const Color _brandAccent = Color(0xFF4FBF8F);
+  static const Color _brandSoft = Color(0xFFE6F4EF);
+
+  final TextEditingController _searchController = TextEditingController();
+
   void _showDetailsDialog({
     required String title,
     required IconData icon,
@@ -46,10 +52,10 @@ class _DirectoriesPageState extends State<DirectoriesPage>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6F4EF),
+                  color: _brandSoft,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: const Color(0xFF1F7A5A), size: 18),
+                child: Icon(icon, color: _brandMain, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -189,14 +195,10 @@ class _DirectoriesPageState extends State<DirectoriesPage>
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFFE6F4EF),
+          color: _brandSoft,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Icon(
-          Icons.account_circle,
-          color: Color(0xFF1F7A5A),
-          size: 18,
-        ),
+        child: const Icon(Icons.account_circle, color: _brandMain, size: 18),
       ),
       title: member.name,
       subtitle: Text(
@@ -218,6 +220,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
 
   @override
   void dispose() {
+    _searchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -255,12 +258,13 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4F4),
+      backgroundColor: const Color(0xFFF5F7FA),
 
-      // ✅ CLEAN APPBAR (gradient stays here ONLY)
       appBar: AppBar(
         automaticallyImplyLeading: true,
         elevation: 0,
+        toolbarHeight: 68,
+        surfaceTintColor: Colors.transparent,
         title: const Text(
           'Directories',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -270,7 +274,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1F7A5A), Color(0xFF4FBF8F)],
+              colors: [_brandMain, _brandAccent],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -280,117 +284,114 @@ class _DirectoriesPageState extends State<DirectoriesPage>
 
       body: Column(
         children: [
-          // ✅ WHITE TAB BAR (separate from gradient)
-          Material(
-            color: Colors.white,
-            elevation: 2,
-            child: TabBar(
-              controller: _tabController,
-              indicatorColor: const Color(0xFF1F7A5A),
-              indicatorWeight: 3,
-              labelColor: const Color(0xFF1F7A5A),
-              unselectedLabelColor: Colors.black54,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [_brandSoft, Colors.white],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFDDEBE3)),
               ),
-              tabs: const [
-                Tab(text: 'Campus Services'),
-                Tab(text: 'Student Government'),
-              ],
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.support_agent_rounded,
+                    color: _brandMain,
+                    size: 20,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Tap any card to view complete contact details for offices and student government officers.',
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12.5,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
-          // 🔍 Search Bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE0E9E3)),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                dividerColor: Colors.transparent,
+                indicator: BoxDecoration(
+                  color: _brandSoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: _brandMain,
+                unselectedLabelColor: Colors.black54,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+                tabs: const [
+                  Tab(text: 'Campus Services'),
+                  Tab(text: 'Student Government'),
+                ],
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 2, 18, 10),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE0E9E3)),
               ),
               child: TextField(
+                controller: _searchController,
                 onChanged: (value) {
                   setState(() => searchQuery = value.toLowerCase());
                 },
-                decoration: const InputDecoration(
-                  hintText: "Search directory...",
-                  prefixIcon: Icon(Icons.search),
+                decoration: InputDecoration(
+                  hintText: 'Search by office, name, or position...',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: searchQuery.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Clear search',
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              searchQuery = '';
+                            });
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
             ),
           ),
 
-          // 📇 CONTENT
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                // Campus Services
-                ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: categories.map((category) {
-                    final filtered = category.items.where((item) {
-                      return item.name.toLowerCase().contains(searchQuery);
-                    }).toList();
-
-                    if (filtered.isEmpty) return const SizedBox();
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 18, bottom: 8),
-                          child: Text(
-                            category.title,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black45,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        ...filtered.map((item) => _buildItem(item)),
-                      ],
-                    );
-                  }).toList(),
-                ),
-
-                // Student Government
-                ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: studentGovernmentGroups.map((group) {
-                    final filtered = group.members.where((member) {
-                      return member.name.toLowerCase().contains(searchQuery) ||
-                          member.position.toLowerCase().contains(searchQuery);
-                    }).toList();
-
-                    if (filtered.isEmpty) return const SizedBox();
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 18, bottom: 8),
-                          child: Text(
-                            group.title,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black45,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        ...filtered.map(
-                          (member) => _buildStudentGovItem(member),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ],
+              children: [_buildCampusTab(), _buildStudentGovernmentTab()],
             ),
           ),
         ],
@@ -404,25 +405,25 @@ class _DirectoriesPageState extends State<DirectoriesPage>
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFFE6F4EF),
+          color: _brandSoft,
           borderRadius: BorderRadius.circular(14),
         ),
         child: PhosphorIcon(
           PhosphorIcons.phone(PhosphorIconsStyle.fill),
-          color: const Color(0xFF1F7A5A),
+          color: _brandMain,
           size: 18,
         ),
       ),
       title: item.name,
-      subtitle: Row(
+      subtitle: Wrap(
+        spacing: 8,
+        runSpacing: 4,
         children: [
           if (item.icm.isNotEmpty)
             Text(
               'ICM ${item.icm}',
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
-          if (item.icm.isNotEmpty && item.pldt.isNotEmpty)
-            const SizedBox(width: 8),
           if (item.pldt.isNotEmpty)
             Text(
               'PLDT ${item.pldt}',
@@ -430,6 +431,177 @@ class _DirectoriesPageState extends State<DirectoriesPage>
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCampusTab() {
+    final visibleCategories = categories
+        .map((category) {
+          final filtered = category.items.where((item) {
+            final q = searchQuery.trim();
+            if (q.isEmpty) return true;
+            return item.name.toLowerCase().contains(q) ||
+                item.icm.toLowerCase().contains(q) ||
+                item.pldt.toLowerCase().contains(q);
+          }).toList();
+
+          return DirectoryCategory(title: category.title, items: filtered);
+        })
+        .where((category) => category.items.isNotEmpty)
+        .toList();
+
+    if (visibleCategories.isEmpty) {
+      return _buildEmptyResults(
+        icon: Icons.search_off_rounded,
+        title: 'No office found',
+        subtitle: 'Try searching with a different office name or number.',
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 100),
+      physics: const BouncingScrollPhysics(),
+      children: visibleCategories.map((category) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 14, bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      category.title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${category.items.length}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black45,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...category.items.map((item) => _buildItem(item)),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildStudentGovernmentTab() {
+    final visibleGroups = studentGovernmentGroups
+        .map((group) {
+          final filtered = group.members.where((member) {
+            final q = searchQuery.trim();
+            if (q.isEmpty) return true;
+            return member.name.toLowerCase().contains(q) ||
+                member.position.toLowerCase().contains(q) ||
+                member.group.toLowerCase().contains(q);
+          }).toList();
+
+          return MapEntry(group.title, filtered);
+        })
+        .where((entry) => entry.value.isNotEmpty)
+        .toList();
+
+    if (visibleGroups.isEmpty) {
+      return _buildEmptyResults(
+        icon: Icons.group_off_rounded,
+        title: 'No student leader found',
+        subtitle: 'Try searching by name, position, or branch.',
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 100),
+      physics: const BouncingScrollPhysics(),
+      children: visibleGroups.map((group) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 14, bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      group.key,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${group.value.length}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black45,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...group.value.map((member) => _buildStudentGovItem(member)),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildEmptyResults({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(24, 80, 24, 100),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE1EAE4)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, size: 34, color: _brandMain),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1B1B1B),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontSize: 12.5,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
