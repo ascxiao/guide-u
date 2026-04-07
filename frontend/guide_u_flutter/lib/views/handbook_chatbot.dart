@@ -290,52 +290,60 @@ class _HandbookChatbotBodyState extends State<_HandbookChatbotBody> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return LayoutBuilder(
       key: const ValueKey('empty_state'),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Ask me anything about the handbook',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Try one of these quick prompts to get started.',
-              style: TextStyle(fontSize: 13, color: Colors.black54),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: _starterPrompts
-                  .map(
-                    (prompt) => ActionChip(
-                      backgroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0xFFCCE3D7)),
-                      labelStyle: const TextStyle(
-                        color: _brandGreen,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                      label: Text(prompt),
-                      onPressed: () => _send(seededPrompt: prompt),
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 16),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Ask me anything about the handbook',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
                     ),
-                  )
-                  .toList(),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Try one of these quick prompts to get started.',
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _starterPrompts
+                        .map(
+                          (prompt) => ActionChip(
+                            backgroundColor: Colors.white,
+                            side: const BorderSide(color: Color(0xFFCCE3D7)),
+                            labelStyle: const TextStyle(
+                              color: _brandGreen,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                            label: Text(prompt),
+                            onPressed: () => _send(seededPrompt: prompt),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
