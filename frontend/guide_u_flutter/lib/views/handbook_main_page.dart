@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../routes/app_routes.dart';
+import '../services/user_profile_service.dart';
 import '../view_models/handbook_main_view_model.dart';
 import '../widgets/handbook_chatbot_fab.dart';
 import 'handbook_bottom_nav_bar.dart';
@@ -37,6 +37,7 @@ class _HandbookMainPageState extends State<HandbookMainPage>
   bool _needsInitialContentAnimation = true;
   bool _seenLoadingState = false;
   bool _animationQueued = false;
+  final UserProfileService _userProfileService = UserProfileService();
 
   @override
   void initState() {
@@ -109,53 +110,6 @@ class _HandbookMainPageState extends State<HandbookMainPage>
     );
   }
 
-  String? _readCandidateUrl(dynamic value) {
-    final url = value?.toString().trim();
-    if (url == null || url.isEmpty) return null;
-    return url;
-  }
-
-  String? _resolveAvatarUrl(User? user) {
-    if (user == null) return null;
-
-    final metadata = user.userMetadata ?? <String, dynamic>{};
-    final metadataCandidates = [
-      metadata['avatar_url'],
-      metadata['picture'],
-      metadata['photo_url'],
-      metadata['avatar'],
-      metadata['image'],
-    ];
-
-    for (final candidate in metadataCandidates) {
-      final value = _readCandidateUrl(candidate);
-      if (value != null) return value;
-    }
-
-    final identities = user.identities;
-    if (identities != null) {
-      for (final identity in identities) {
-        final identityData = identity.identityData;
-        if (identityData == null) continue;
-
-        final identityCandidates = [
-          identityData['avatar_url'],
-          identityData['picture'],
-          identityData['photo_url'],
-          identityData['avatar'],
-          identityData['image'],
-        ];
-
-        for (final candidate in identityCandidates) {
-          final value = _readCandidateUrl(candidate);
-          if (value != null) return value;
-        }
-      }
-    }
-
-    return null;
-  }
-
   Widget _buildAppBarAvatar(String? avatarUrl) {
     const accent = Color(0xFF006633);
 
@@ -203,34 +157,6 @@ class _HandbookMainPageState extends State<HandbookMainPage>
     }
 
     return modified;
-  }
-
-  String _firstNameFromUser(User? user) {
-    if (user == null) return 'Student';
-
-    final metadata = user.userMetadata ?? <String, dynamic>{};
-    final rawName =
-        (metadata['name'] ?? metadata['full_name'] ?? metadata['display_name'])
-            ?.toString()
-            .trim();
-
-    if (rawName != null && rawName.isNotEmpty) {
-      final first = rawName.split(RegExp(r'\s+')).first;
-      if (first.isNotEmpty) {
-        return first[0].toUpperCase() + first.substring(1).toLowerCase();
-      }
-    }
-
-    final email = user.email?.trim();
-    if (email != null && email.contains('@')) {
-      final local = email.split('@').first;
-      final token = local.split(RegExp(r'[._+\-]')).first;
-      if (token.isNotEmpty) {
-        return token[0].toUpperCase() + token.substring(1).toLowerCase();
-      }
-    }
-
-    return 'Student';
   }
 
   int _compareNumericToken(String a, String b) {
@@ -334,8 +260,7 @@ class _HandbookMainPageState extends State<HandbookMainPage>
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final avatarUrl = _resolveAvatarUrl(user);
+    final avatarUrl = _userProfileService.currentAvatarUrl();
 
     return PreferredSize(
       preferredSize: const Size.fromHeight(68),
@@ -395,8 +320,7 @@ class _HandbookMainPageState extends State<HandbookMainPage>
 
   Widget _buildBody(BuildContext context, HandbookMainViewModel viewModel) {
     final grouped = viewModel.groupedArticles;
-    final user = Supabase.instance.client.auth.currentUser;
-    final firstName = _firstNameFromUser(user);
+    final firstName = _userProfileService.currentFirstName();
 
     if (viewModel.loading) {
       _seenLoadingState = true;
