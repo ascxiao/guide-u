@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../routes/app_routes.dart';
+import '../services/session_service.dart';
+import '../services/user_profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -17,53 +19,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _checkingAdmin = true;
   bool _isAdmin = false;
-
-  String? _readCandidateUrl(dynamic value) {
-    final url = value?.toString().trim();
-    if (url == null || url.isEmpty) return null;
-    return url;
-  }
-
-  String? _resolveAvatarUrl(User? user) {
-    if (user == null) return null;
-
-    final metadata = user.userMetadata ?? <String, dynamic>{};
-    final metadataCandidates = [
-      metadata['avatar_url'],
-      metadata['picture'],
-      metadata['photo_url'],
-      metadata['avatar'],
-      metadata['image'],
-    ];
-
-    for (final candidate in metadataCandidates) {
-      final value = _readCandidateUrl(candidate);
-      if (value != null) return value;
-    }
-
-    final identities = user.identities;
-    if (identities != null) {
-      for (final identity in identities) {
-        final identityData = identity.identityData;
-        if (identityData == null) continue;
-
-        final identityCandidates = [
-          identityData['avatar_url'],
-          identityData['picture'],
-          identityData['photo_url'],
-          identityData['avatar'],
-          identityData['image'],
-        ];
-
-        for (final candidate in identityCandidates) {
-          final value = _readCandidateUrl(candidate);
-          if (value != null) return value;
-        }
-      }
-    }
-
-    return null;
-  }
+  final SessionService _sessionService = SessionService();
+  final UserProfileService _userProfileService = UserProfileService();
 
   Widget _buildProfileAvatar(String? avatarUrl, {double size = 60}) {
     const accent = _brandMain;
@@ -102,22 +59,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  String _resolveDisplayName(User? user) {
-    final raw =
-        user?.userMetadata?['name'] ??
-        user?.userMetadata?['full_name'] ??
-        user?.userMetadata?['display_name'];
-    final displayName = raw?.toString().trim();
-    if (displayName != null && displayName.isNotEmpty) return displayName;
-
-    final email = user?.email?.trim();
-    if (email != null && email.contains('@')) {
-      return email.split('@').first;
-    }
-
-    return 'Unknown User';
-  }
-
   Future<void> _confirmLogout() async {
     final shouldLogout = await showDialog<bool>(
       context: context,
@@ -142,7 +83,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (shouldLogout != true || !mounted) return;
 
-    await Supabase.instance.client.auth.signOut();
+    await _sessionService.signOut();
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(
       context,
@@ -273,7 +214,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _checkingAdmin = true;
     });
 
-    final isAdmin = await _isCurrentUserAdmin();
+    final isAdmin = await _userProfileService.isCurrentUserAdmin();
 
     if (!mounted) return;
     setState(() {
@@ -282,41 +223,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  Future<bool> _isCurrentUserAdmin() async {
-    final supabase = Supabase.instance.client;
-    final userId = supabase.auth.currentUser?.id;
-
-    if (userId == null) {
-      return false;
-    }
-
-    try {
-      final List<dynamic> rows = await supabase
-          .from('admins')
-          .select('role')
-          .eq('user_id', userId)
-          .limit(20);
-
-      return rows.any((row) {
-        final role = (Map<String, dynamic>.from(row)['role'] ?? '')
-            .toString()
-            .trim()
-            .toLowerCase();
-        return role == 'admin' || role == 'super_admin';
-      });
-    } catch (_) {
-      return false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final userName = _resolveDisplayName(user);
-    final userEmail = user?.email?.trim().isNotEmpty == true
-        ? user!.email!.trim()
-        : 'No email available';
-    final avatarUrl = _resolveAvatarUrl(user);
+    final profile = _userProfileService.currentProfile();
+    final userName = profile.displayName;
+    final userEmail = profile.email;
+    final avatarUrl = profile.avatarUrl;
 
     return Scaffold(
       backgroundColor: _pageBg,

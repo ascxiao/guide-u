@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import '../view_models/saved_articles_view_model.dart';
-import '../services/local_cache_service.dart';
+import '../services/session_service.dart';
 import '../widgets/handbook_chatbot_fab.dart';
 import '../routes/app_routes.dart';
 
@@ -52,10 +50,10 @@ class _HandbookSavedArticlesPageState extends State<HandbookSavedArticlesPage> {
   static const Color _brandAccent = Color(0xFF4FBF8F);
   static const Color _brandSoft = Color(0xFFE6F4EF);
 
-  final LocalCacheService _cacheService = LocalCacheService();
+  final SessionService _sessionService = SessionService();
 
   String _userId() {
-    return Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
+    return _sessionService.currentUserIdOrDemo;
   }
 
   Future<void> _refreshSaved(SavedArticlesViewModel savedVM) async {
@@ -113,10 +111,30 @@ class _HandbookSavedArticlesPageState extends State<HandbookSavedArticlesPage> {
                 centerTitle: true,
                 foregroundColor: Colors.white,
                 actions: [
-                  IconButton(
-                    tooltip: 'Refresh saved articles',
-                    onPressed: () => _refreshSaved(savedVM),
-                    icon: const Icon(Icons.refresh_rounded),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      margin: const EdgeInsets.only(top: 8, bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.45),
+                        ),
+                      ),
+                      child: IconButton(
+                        tooltip: 'Refresh saved articles',
+                        padding: EdgeInsets.zero,
+                        onPressed: () => _refreshSaved(savedVM),
+                        icon: const Icon(
+                          Icons.refresh_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -176,7 +194,9 @@ class _HandbookSavedArticlesPageState extends State<HandbookSavedArticlesPage> {
                     ],
                   )
                 : FutureBuilder<List<Map<String, dynamic>>>(
-                    future: _fetchArticlesForSaved(savedVM.savedArticles),
+                    future: savedVM.fetchArticlesForSavedDetails(
+                      savedVM.savedArticles,
+                    ),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return ListView(
@@ -437,66 +457,6 @@ class _HandbookSavedArticlesPageState extends State<HandbookSavedArticlesPage> {
         );
       },
     );
-  }
-
-  /// 🔹 FIXED: moved OUTSIDE build()
-  Future<List<Map<String, dynamic>>> _fetchArticlesForSaved(
-    List savedArticles,
-  ) async {
-    final articleIds = savedArticles
-        .map((s) => s.articleId)
-        .whereType<String>()
-        .toList();
-
-    if (articleIds.isEmpty) return [];
-
-    final cachedArticles = await _cacheService.getCachedArticles();
-    final cachedById = {
-      for (final article in cachedArticles) article.id: article.toJson(),
-    };
-
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final bool online = connectivityResult.any(
-      (entry) => entry != ConnectivityResult.none,
-    );
-
-    if (online) {
-      try {
-        final response = await Supabase.instance.client
-            .from('articles')
-            .select()
-            .filter('id', 'in', articleIds)
-            .timeout(const Duration(seconds: 8));
-
-        final serverArticles = List<Map<String, dynamic>>.from(
-          response as List,
-        );
-
-        // Keep card rendering stable by preserving saved order.
-        final serverById = {
-          for (final article in serverArticles)
-            article['id']?.toString(): article,
-        };
-
-        return articleIds
-            .map(
-              (id) =>
-                  serverById[id] ??
-                  cachedById[id] ??
-                  {'id': id, 'title': 'Article', 'body_text': ''},
-            )
-            .toList();
-      } catch (_) {
-        // Fall back to local cache below.
-      }
-    }
-
-    return articleIds
-        .map(
-          (id) =>
-              cachedById[id] ?? {'id': id, 'title': 'Article', 'body_text': ''},
-        )
-        .toList();
   }
 }
 

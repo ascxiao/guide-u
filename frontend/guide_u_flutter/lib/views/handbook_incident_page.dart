@@ -254,11 +254,34 @@ class _HandbookIncidentPageState extends State<HandbookIncidentPage> {
               backgroundColor: Colors.white,
               foregroundColor: _mainGreen,
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: viewModel.loading
-                      ? null
-                      : viewModel.refreshHistory,
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    margin: const EdgeInsets.only(top: 8, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: _mainGreen.withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _mainGreen.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: IconButton(
+                      tooltip: 'Refresh',
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        Icons.refresh_rounded,
+                        color: viewModel.loading
+                            ? _mainGreen.withValues(alpha: 0.35)
+                            : _mainGreen,
+                        size: 18,
+                      ),
+                      onPressed: viewModel.loading
+                          ? null
+                          : viewModel.refreshHistory,
+                    ),
+                  ),
                 ),
               ],
             ),
