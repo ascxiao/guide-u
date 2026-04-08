@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="guide_u_flutter"
+        android:label="GuideU"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
