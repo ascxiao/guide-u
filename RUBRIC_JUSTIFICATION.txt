@@ -10,7 +10,7 @@ State management used
 Rubric justification with code lines
 
 1. Transactional / CRUD operations
-- Student report modules are intentionally immutable after submit:
+- Student report modules are intentionally immutable after submission:
   - Create incident report: frontend/guide_u_flutter/lib/services/reporting_service.dart:90
   - Create lost/found report: frontend/guide_u_flutter/lib/services/reporting_service.dart:144
   - Read incident history: frontend/guide_u_flutter/lib/services/reporting_service.dart:165
