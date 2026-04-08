@@ -23,301 +23,550 @@ class _HandbookChatbotBody extends StatefulWidget {
   State<_HandbookChatbotBody> createState() => _HandbookChatbotBodyState();
 }
 
-class _HandbookChatbotBodyState extends State<_HandbookChatbotBody>
-    with SingleTickerProviderStateMixin {
+class _HandbookChatbotBodyState extends State<_HandbookChatbotBody> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  bool _isPressed = false;
+  static const Color _brandGreen = Color(0xFF1F7A5A);
+  static const Color _brandSoft = Color(0xFFE8F4EE);
+  static const List<String> _starterPrompts = [
+    'What are the enrollment requirements?',
+    'How do I apply for scholarships?',
+    'Where can I find student services?',
+    'What is the class schedule process?',
+  ];
 
-  void _send() {
+  bool _isPressed = false;
+  bool _showScrollToLatest = false;
+  int _lastMessageCount = 0;
+  bool _lastLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    _controller.addListener(_onInputChanged);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onInputChanged);
+    _controller.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onInputChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final bool shouldShow = position.maxScrollExtent - position.pixels > 140;
+    if (shouldShow != _showScrollToLatest) {
+      setState(() {
+        _showScrollToLatest = shouldShow;
+      });
+    }
+  }
+
+  void _scrollToBottom({bool animated = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (animated) {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(target);
+      }
+    });
+  }
+
+  void _syncAutoScroll(HandbookChatbotViewModel viewModel) {
+    final bool messageCountChanged =
+        viewModel.messages.length != _lastMessageCount;
+    final bool responseFinished = _lastLoading && !viewModel.loading;
+    if (messageCountChanged || responseFinished) {
+      _scrollToBottom(animated: true);
+    }
+    _lastMessageCount = viewModel.messages.length;
+    _lastLoading = viewModel.loading;
+  }
+
+  void _send({String? seededPrompt}) {
     final viewModel = Provider.of<HandbookChatbotViewModel>(
       context,
       listen: false,
     );
 
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    final text = (seededPrompt ?? _controller.text).trim();
+    if (text.isEmpty || viewModel.loading) return;
 
+    HapticFeedback.lightImpact();
     _controller.clear();
     viewModel.sendPrompt(text);
+    _scrollToBottom(animated: true);
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeOut,
+  Future<void> _confirmClearConversation() async {
+    final viewModel = Provider.of<HandbookChatbotViewModel>(
+      context,
+      listen: false,
+    );
+    if (viewModel.messages.isEmpty) return;
+
+    final bool? shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Clear conversation?'),
+          content: const Text(
+            'This removes all messages in the current chat session.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: _brandGreen),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Clear'),
+            ),
+          ],
         );
-      }
-    });
+      },
+    );
+
+    if (shouldClear == true) {
+      viewModel.clearMessages();
+      setState(() {
+        _showScrollToLatest = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<HandbookChatbotViewModel>(context);
+    _syncAutoScroll(viewModel);
+    final bool canSend =
+        _controller.text.trim().isNotEmpty && !viewModel.loading;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF2F7F4),
 
-      /// 🤍 APPBAR
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 0.8,
+        shadowColor: Colors.black12,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 20,
-            color: Color(0xFF27AE60),
+            color: _brandGreen,
           ),
           onPressed: () =>
               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false),
         ),
-        title: const Text(
-          'Juan La Salle',
-          style: TextStyle(
-            color: Color(0xFF27AE60),
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: _brandSoft,
+              child: Icon(
+                Icons.support_agent_rounded,
+                size: 16,
+                color: _brandGreen,
+              ),
+            ),
+            SizedBox(width: 8),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Juan La Salle',
+                  style: TextStyle(
+                    color: _brandGreen,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  'Online handbook assistant',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         centerTitle: true,
         actions: [
           IconButton(
             tooltip: 'Clear conversation',
-            icon: const Icon(Icons.delete_outline, color: Color(0xFF27AE60)),
-            onPressed: () {
-              Provider.of<HandbookChatbotViewModel>(context, listen: false).clearMessages();
-            },
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              color: viewModel.messages.isEmpty ? Colors.black26 : _brandGreen,
+            ),
+            onPressed: viewModel.messages.isEmpty
+                ? null
+                : _confirmClearConversation,
           ),
         ],
       ),
 
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: InternetRequiredNotice(featureName: 'Chatbot'),
-            ),
-
-            /// 💬 CHAT AREA
-            Expanded(
-              child: viewModel.messages.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "Ask me anything",
-                        style: TextStyle(color: Colors.black38, fontSize: 14),
-                      ),
-                    )
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(16),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: viewModel.messages.length,
-                      itemBuilder: (context, index) {
-                        final msg = viewModel.messages[index];
-
-                        return TweenAnimationBuilder(
-                          duration: const Duration(milliseconds: 300),
-                          tween: Tween<double>(begin: 30, end: 0),
-                          curve: Curves.easeOut,
-                          builder: (context, value, child) {
-                            return Opacity(
-                              opacity: (1 - (value / 30)).clamp(0, 1),
-                              child: Transform.translate(
-                                offset: Offset(0, value),
-                                child: Transform.scale(
-                                  scale: 0.98 + (0.02 * (1 - value / 30)),
-                                  child: child,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Align(
-                            alignment: msg.isUser
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 6),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                    MediaQuery.of(context).size.width * 0.72,
-                              ),
-                              decoration: BoxDecoration(
-                                color: msg.isUser
-                                    ? const Color(0xFF27AE60)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.only(
-                                  topLeft: const Radius.circular(16),
-                                  topRight: const Radius.circular(16),
-                                  bottomLeft: msg.isUser
-                                      ? const Radius.circular(16)
-                                      : const Radius.circular(4),
-                                  bottomRight: msg.isUser
-                                      ? const Radius.circular(4)
-                                      : const Radius.circular(16),
-                                ),
-                                border: msg.isUser
-                                    ? null
-                                    : Border.all(color: Colors.black12),
-                                boxShadow: [
-                                  if (!msg.isUser)
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                ],
-                              ),
-                              child: msg.isUser
-                                  ? Text(
-                                      msg.text,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        height: 1.4,
-                                      ),
-                                    )
-                                  : Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          msg.text,
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                            fontSize: 15,
-                                            height: 1.4,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: GestureDetector(
-                                            onTap: () async {
-                                              await Clipboard.setData(
-                                                ClipboardData(text: msg.text),
-                                              );
-                                              if (context.mounted) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Copied'),
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                            child: const Icon(
-                                              Icons.copy_rounded,
-                                              size: 16,
-                                              color: Colors.black38,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-
-            /// ⏳ TYPING DOTS (enhanced, repeating)
-            if (viewModel.loading)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 10),
-                child: TypingDots(),
-              ),
-
-            /// ⚠️ MINI DISCLAIMER
-            const Padding(
-              padding: EdgeInsets.only(bottom: 6),
-              child: Text(
-                "AI may make mistakes. Verify important information.",
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.black38,
-                  fontStyle: FontStyle.italic,
+            Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(12, 8, 12, 0),
+                  child: InternetRequiredNotice(featureName: 'Chatbot'),
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-
-            /// ✏️ INPUT FIELD
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.black12),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    child: viewModel.messages.isEmpty
+                        ? _buildEmptyState()
+                        : _buildMessageList(viewModel),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.edit_outlined,
-                      size: 20,
+                if (viewModel.loading)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: TypingDots(),
+                  ),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    'AI may make mistakes. Verify important information.',
+                    style: TextStyle(
+                      fontSize: 11,
                       color: Colors.black38,
+                      fontStyle: FontStyle.italic,
                     ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                _buildComposer(canSend),
+              ],
+            ),
+            if (_showScrollToLatest && viewModel.messages.isNotEmpty)
+              Positioned(
+                right: 16,
+                bottom: 115,
+                child: FloatingActionButton.small(
+                  heroTag: 'scrollToLatest',
+                  backgroundColor: _brandGreen,
+                  onPressed: () => _scrollToBottom(animated: true),
+                  child: const Icon(
+                    Icons.arrow_downward_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                    const SizedBox(width: 8),
-
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        onSubmitted: (_) => _send(),
-                        decoration: const InputDecoration(
-                          hintText: 'Ask Juan La Salle...',
-                          border: InputBorder.none,
-                        ),
-                      ),
+  Widget _buildEmptyState() {
+    return LayoutBuilder(
+      key: const ValueKey('empty_state'),
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 16),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Ask me anything about the handbook',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
                     ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Try one of these quick prompts to get started.',
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _starterPrompts
+                        .map(
+                          (prompt) => ActionChip(
+                            backgroundColor: Colors.white,
+                            side: const BorderSide(color: Color(0xFFCCE3D7)),
+                            labelStyle: const TextStyle(
+                              color: _brandGreen,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                            label: Text(prompt),
+                            onPressed: () => _send(seededPrompt: prompt),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-                    GestureDetector(
-                      onTapDown: (_) => setState(() => _isPressed = true),
-                      onTapUp: (_) {
-                        setState(() => _isPressed = false);
-                        _send();
-                      },
-                      onTapCancel: () => setState(() => _isPressed = false),
-                      child: AnimatedScale(
-                        scale: _isPressed ? 0.85 : 1,
-                        duration: const Duration(milliseconds: 120),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFF27AE60),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_upward_rounded,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+  Widget _buildMessageList(HandbookChatbotViewModel viewModel) {
+    return ListView.separated(
+      key: const ValueKey('messages_list'),
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
+      physics: const BouncingScrollPhysics(),
+      itemCount: viewModel.messages.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final msg = viewModel.messages[index];
+        return TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 16, end: 0),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: (1 - (value / 16)).clamp(0, 1),
+              child: Transform.translate(
+                offset: Offset(0, value),
+                child: child,
+              ),
+            );
+          },
+          child: Align(
+            alignment: msg.isUser
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.78,
+              ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: msg.isUser ? _brandGreen : Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: msg.isUser
+                        ? const Radius.circular(20)
+                        : const Radius.circular(6),
+                    bottomRight: msg.isUser
+                        ? const Radius.circular(6)
+                        : const Radius.circular(20),
+                  ),
+                  border: msg.isUser
+                      ? null
+                      : Border.all(color: const Color(0xFFDFEAE4)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  child: msg.isUser
+                      ? Text(
+                          msg.text,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            height: 1.35,
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.support_agent_rounded,
+                                  size: 14,
+                                  color: _brandGreen,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Juan La Salle',
+                                  style: TextStyle(
+                                    color: _brandGreen,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            SelectableText(
+                              msg.text,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 15,
+                                height: 1.35,
+                              ),
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: IconButton(
+                                tooltip: 'Copy message',
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () async {
+                                  await Clipboard.setData(
+                                    ClipboardData(text: msg.text),
+                                  );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        behavior: SnackBarBehavior.floating,
+                                        content: Text('Message copied'),
+                                        duration: Duration(milliseconds: 1200),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(
+                                  Icons.copy_rounded,
+                                  size: 17,
+                                  color: Colors.black45,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildComposer(bool canSend) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 14),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: const Color(0xFFD7E4DC)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 14, right: 8, top: 2, bottom: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(Icons.edit_outlined, size: 20, color: Colors.black45),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  minLines: 1,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _send(),
+                  decoration: const InputDecoration(
+                    hintText: 'Ask Juan La Salle...',
+                    hintStyle: TextStyle(color: Colors.black45, fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTapDown: canSend
+                    ? (_) => setState(() => _isPressed = true)
+                    : null,
+                onTapUp: canSend
+                    ? (_) {
+                        setState(() => _isPressed = false);
+                        _send();
+                      }
+                    : null,
+                onTapCancel: () => setState(() => _isPressed = false),
+                child: AnimatedScale(
+                  scale: _isPressed ? 0.88 : 1,
+                  duration: const Duration(milliseconds: 120),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOut,
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: canSend ? _brandGreen : const Color(0xFFBCD4C7),
+                    ),
+                    child: canSend
+                        ? const Icon(
+                            Icons.arrow_upward_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          )
+                        : const Icon(
+                            Icons.hourglass_top_rounded,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// 🔵 Repeating bouncing typing dots widget
 class TypingDots extends StatefulWidget {
   const TypingDots({super.key});
 
@@ -325,9 +574,10 @@ class TypingDots extends StatefulWidget {
   State<TypingDots> createState() => _TypingDotsState();
 }
 
-class _TypingDotsState extends State<TypingDots> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+class _TypingDotsState extends State<TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final List<Animation<double>> _dotAnimation;
 
   @override
   void initState() {
@@ -335,11 +585,18 @@ class _TypingDotsState extends State<TypingDots> with SingleTickerProviderStateM
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
+    )..repeat();
 
-    _animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _dotAnimation = List.generate(3, (index) {
+      final start = index * 0.18;
+      final end = (start + 0.55).clamp(0.0, 1.0);
+      return Tween<double>(begin: 0.6, end: 1.1).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Interval(start, end, curve: Curves.easeInOut),
+        ),
+      );
+    });
   }
 
   @override
@@ -350,33 +607,32 @@ class _TypingDotsState extends State<TypingDots> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (index) {
-        return AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            double offset = (_animation.value - 0.5).abs() * -12; // bounce
-            double colorValue = (_animation.value + index * 0.3) % 1; // phased color
-            return Transform.translate(
-              offset: Offset(0, offset),
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(3, (index) {
+            final scale = _dotAnimation[index].value;
+            return Transform.scale(
+              scale: scale,
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: 10,
-                height: 10,
+                width: 9,
+                height: 9,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Color.lerp(
-                    const Color(0xFFBDBDBD),
-                    const Color(0xFF27AE60),
-                    colorValue,
+                    const Color(0xFFB5C9BE),
+                    _HandbookChatbotBodyState._brandGreen,
+                    (scale - 0.6) / 0.5,
                   ),
                 ),
               ),
             );
-          },
+          }),
         );
-      }),
+      },
     );
   }
 }

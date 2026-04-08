@@ -181,7 +181,17 @@ class ReportingService {
     }
 
     final rows = List<Map<String, dynamic>>.from(response as List);
-    return rows.map(IncidentReportItem.fromJson).toList();
+    final hydratedRows = await Future.wait(
+      rows.map((row) async {
+        final mapped = Map<String, dynamic>.from(row);
+        mapped['image_urls'] = await _resolveImageUrls(
+          bucket: 'incident-report-images',
+          rawValue: row['image_urls'],
+        );
+        return mapped;
+      }),
+    );
+    return hydratedRows.map(IncidentReportItem.fromJson).toList();
   }
 
   Future<List<LostFoundReportItem>> fetchMyLostFoundReports() async {
@@ -203,7 +213,54 @@ class ReportingService {
     }
 
     final rows = List<Map<String, dynamic>>.from(response as List);
-    return rows.map(LostFoundReportItem.fromJson).toList();
+    final hydratedRows = await Future.wait(
+      rows.map((row) async {
+        final mapped = Map<String, dynamic>.from(row);
+        mapped['image_urls'] = await _resolveImageUrls(
+          bucket: 'lost-found-images',
+          rawValue: row['image_urls'],
+        );
+        return mapped;
+      }),
+    );
+    return hydratedRows.map(LostFoundReportItem.fromJson).toList();
+  }
+
+  Future<List<String>> _resolveImageUrls({
+    required String bucket,
+    required dynamic rawValue,
+  }) async {
+    if (rawValue is! List) return const [];
+
+    final resolved = <String>[];
+    for (final item in rawValue) {
+      final value = item.toString().trim();
+      if (value.isEmpty) continue;
+
+      if (value.startsWith('http://') || value.startsWith('https://')) {
+        resolved.add(value);
+        continue;
+      }
+
+      try {
+        final signedUrl = await _supabase.storage
+            .from(bucket)
+            .createSignedUrl(value, 60 * 60 * 24 * 7);
+        resolved.add(signedUrl);
+        continue;
+      } catch (_) {
+        // Fallback for public buckets.
+      }
+
+      try {
+        final publicUrl = _supabase.storage.from(bucket).getPublicUrl(value);
+        resolved.add(publicUrl);
+      } catch (_) {
+        // Skip unresolved image paths.
+      }
+    }
+
+    return resolved;
   }
 
   Future<List<String>> _uploadImages({

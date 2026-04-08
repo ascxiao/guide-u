@@ -1,0 +1,64 @@
+Rubric Justification for GuideU Flutter Submission
+
+State management used
+1. Primary pattern: Provider + ChangeNotifier (MVVM-friendly reactive state)
+- App-level provider registration: frontend/guide_u_flutter/lib/main.dart:51, frontend/guide_u_flutter/lib/main.dart:53, frontend/guide_u_flutter/lib/main.dart:55
+- ViewModels as ChangeNotifier: frontend/guide_u_flutter/lib/view_models/saved_articles_view_model.dart:8, frontend/guide_u_flutter/lib/view_models/handbook_main_view_model.dart:8, frontend/guide_u_flutter/lib/view_models/incident_report_view_model.dart:7
+- UI consumption via Consumer and Provider.of: frontend/guide_u_flutter/lib/views/handbook_main_page.dart:320, frontend/guide_u_flutter/lib/views/handbook_saved_articles_page.dart:89, frontend/guide_u_flutter/lib/views/handbook_article_page.dart:52
+2. Secondary pattern: local setState for small ephemeral UI state in a few screens (for view-only concerns), while business state stays in ViewModels.
+
+Rubric justification with code lines
+
+1. Transactional / CRUD operations
+- Student report modules are intentionally immutable after submission:
+  - Create incident report: frontend/guide_u_flutter/lib/services/reporting_service.dart:90
+  - Create lost/found report: frontend/guide_u_flutter/lib/services/reporting_service.dart:144
+  - Read incident history: frontend/guide_u_flutter/lib/services/reporting_service.dart:165
+  - Read lost/found history: frontend/guide_u_flutter/lib/services/reporting_service.dart:187
+- Rationale: report submissions are append-only for integrity and auditability.
+- System-level CRUD still exists in other modules:
+  - Saved articles add/upsert and remove/delete: frontend/guide_u_flutter/lib/view_models/saved_articles_view_model.dart:192, frontend/guide_u_flutter/lib/view_models/saved_articles_view_model.dart:226
+  - Admin role update/delete: frontend/guide_u_flutter/lib/views/admin_dashboard_screen.dart:270, frontend/guide_u_flutter/lib/views/admin_dashboard_screen.dart:298
+
+2. MVVM code structure
+- Clear layer separation:
+  - Models: frontend/guide_u_flutter/lib/models
+  - ViewModels: frontend/guide_u_flutter/lib/view_models
+  - Views: frontend/guide_u_flutter/lib/views
+- ViewModels encapsulate business/state logic:
+  - frontend/guide_u_flutter/lib/view_models/login_view_model.dart:6
+  - frontend/guide_u_flutter/lib/view_models/handbook_search_view_model.dart:8
+  - frontend/guide_u_flutter/lib/view_models/lost_found_report_view_model.dart:7
+
+3. State management
+- Centralized reactive state with notifyListeners:
+  - Connectivity-driven state updates: frontend/guide_u_flutter/lib/view_models/saved_articles_view_model.dart:30
+  - Loading/error lifecycle updates: frontend/guide_u_flutter/lib/view_models/saved_articles_view_model.dart:134, frontend/guide_u_flutter/lib/view_models/saved_articles_view_model.dart:136
+- UI wiring to ViewModel state:
+  - frontend/guide_u_flutter/lib/views/login_screen.dart:18
+  - frontend/guide_u_flutter/lib/views/handbook_incident_page.dart:238
+  - frontend/guide_u_flutter/lib/widgets/connectivity_banner.dart:20
+
+4. Database component
+- Supabase integration in app startup: frontend/guide_u_flutter/lib/main.dart:43
+- Relational schema for reports/admin modules:
+  - Incident table: web/src/lib/supabase/schema.sql:68
+  - Lost/found table: web/src/lib/supabase/schema.sql:85
+  - Admins table: web/src/lib/supabase/schema.sql:115
+- Security with row-level security:
+  - Enable RLS: web/src/lib/supabase/schema.sql:163
+  - Ownership read policy example: web/src/lib/supabase/schema.sql:170
+- Offline/local persistence support:
+  - Hive cache: frontend/guide_u_flutter/lib/services/local_cache_service.dart:21
+  - SharedPreferences queue/cache: frontend/guide_u_flutter/lib/services/local_cache_service.dart:52
+
+5. Frontend framework (optional)
+- Implemented using Flutter (code-first frontend), not FlutterFlow:
+  - App bootstrap: frontend/guide_u_flutter/lib/main.dart:50
+  - Root app widget: frontend/guide_u_flutter/lib/main.dart:62
+  - MaterialApp UI shell: frontend/guide_u_flutter/lib/main.dart:93
+
+Our project uses Provider + ChangeNotifier for MVVM state management, Supabase with row-level security for secure 
+persistence, and a policy-driven transactional model where student report submissions are intentionally append-only 
+(create/read) to preserve integrity and auditability, while full mutation operations are available in modules where 
+update/delete are logically valid.
