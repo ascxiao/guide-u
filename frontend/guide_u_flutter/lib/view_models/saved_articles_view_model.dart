@@ -71,11 +71,8 @@ class SavedArticlesViewModel extends ChangeNotifier {
     final articleIds = await _cacheService.getSavedArticlesForUser(userId);
     _savedArticles = articleIds
         .map(
-          (articleId) => SavedArticle(
-            id: articleId,
-            userId: userId,
-            articleId: articleId,
-          ),
+          (articleId) =>
+              SavedArticle(id: articleId, userId: userId, articleId: articleId),
         )
         .toList();
   }
@@ -93,8 +90,9 @@ class SavedArticlesViewModel extends ChangeNotifier {
 
     _syncInProgress = true;
     try {
-      final pending =
-          await _cacheService.getQueuedSavedArticleOperations(userId);
+      final pending = await _cacheService.getQueuedSavedArticleOperations(
+        userId,
+      );
 
       if (pending.isEmpty) return;
 
@@ -172,11 +170,7 @@ class SavedArticlesViewModel extends ChangeNotifier {
     if (!isArticleSaved(articleId)) {
       _savedArticles = [
         ..._savedArticles,
-        SavedArticle(
-          id: articleId,
-          userId: userId,
-          articleId: articleId,
-        ),
+        SavedArticle(id: articleId, userId: userId, articleId: articleId),
       ];
       notifyListeners();
     }
@@ -205,8 +199,9 @@ class SavedArticlesViewModel extends ChangeNotifier {
   Future<void> removeSavedArticle(String userId, String articleId) async {
     await _refreshOnlineStatus();
 
-    _savedArticles =
-        _savedArticles.where((a) => a.articleId != articleId).toList();
+    _savedArticles = _savedArticles
+        .where((a) => a.articleId != articleId)
+        .toList();
     notifyListeners();
 
     await _cacheCurrentSavedArticles(userId);
@@ -236,6 +231,62 @@ class SavedArticlesViewModel extends ChangeNotifier {
       _error = e.toString();
       notifyListeners();
     }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchArticlesForSavedDetails(
+    List<SavedArticle> savedArticles,
+  ) async {
+    final articleIds = savedArticles
+        .map((s) => s.articleId)
+        .whereType<String>()
+        .toList();
+
+    if (articleIds.isEmpty) return [];
+
+    final cachedArticles = await _cacheService.getCachedArticles();
+    final cachedById = {
+      for (final article in cachedArticles) article.id: article.toJson(),
+    };
+
+    final connectivityResult = await _connectivity.checkConnectivity();
+    final online = _isOnlineFromConnectivityResult(connectivityResult);
+
+    if (online) {
+      try {
+        final response = await _supabase
+            .from('articles')
+            .select()
+            .filter('id', 'in', articleIds)
+            .timeout(const Duration(seconds: 8));
+
+        final serverArticles = List<Map<String, dynamic>>.from(
+          response as List,
+        );
+
+        final serverById = {
+          for (final article in serverArticles)
+            article['id']?.toString(): article,
+        };
+
+        return articleIds
+            .map(
+              (id) =>
+                  serverById[id] ??
+                  cachedById[id] ??
+                  {'id': id, 'title': 'Article', 'body_text': ''},
+            )
+            .toList();
+      } catch (_) {
+        // Fall back to local cache below.
+      }
+    }
+
+    return articleIds
+        .map(
+          (id) =>
+              cachedById[id] ?? {'id': id, 'title': 'Article', 'body_text': ''},
+        )
+        .toList();
   }
 
   bool isArticleSaved(String articleId) {

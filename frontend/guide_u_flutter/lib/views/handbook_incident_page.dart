@@ -33,14 +33,21 @@ class _HandbookIncidentPageState extends State<HandbookIncidentPage> {
   String _incidentType = 'Safety';
   String _severityLevel = 'Minor';
 
+  String _studentIdPlaceholderFromEmail(String email, String fallback) {
+    final localPart = email.split('@').first;
+    final digits = localPart.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return fallback;
+    return digits.length > 7 ? digits.substring(0, 7) : digits;
+  }
+
   void _syncProfileFields(IncidentReportViewModel viewModel) {
     if (!viewModel.useProfileInfo) return;
 
     if (_emailController.text != viewModel.defaultEmail) {
       _emailController.text = viewModel.defaultEmail;
     }
-    if (_studentIdController.text != viewModel.defaultStudentId) {
-      _studentIdController.text = viewModel.defaultStudentId;
+    if (_studentIdController.text.isNotEmpty) {
+      _studentIdController.clear();
     }
   }
 
@@ -52,7 +59,7 @@ class _HandbookIncidentPageState extends State<HandbookIncidentPage> {
 
     if (checked) {
       _emailController.text = viewModel.defaultEmail;
-      _studentIdController.text = viewModel.defaultStudentId;
+      _studentIdController.clear();
       return;
     }
 
@@ -123,8 +130,9 @@ class _HandbookIncidentPageState extends State<HandbookIncidentPage> {
   String? _validateEmail(String? value) {
     final email = (value ?? '').trim();
     if (email.isEmpty) return 'Email is required.';
-    if (!email.toLowerCase().endsWith('@gmail.com')) {
-      return 'Email must be a gmail.com address.';
+    const emailPattern = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$';
+    if (!RegExp(emailPattern).hasMatch(email)) {
+      return 'Enter a valid email address.';
     }
     return null;
   }
@@ -246,11 +254,34 @@ class _HandbookIncidentPageState extends State<HandbookIncidentPage> {
               backgroundColor: Colors.white,
               foregroundColor: _mainGreen,
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: viewModel.loading
-                      ? null
-                      : viewModel.refreshHistory,
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    margin: const EdgeInsets.only(top: 8, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: _mainGreen.withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _mainGreen.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: IconButton(
+                      tooltip: 'Refresh',
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        Icons.refresh_rounded,
+                        color: viewModel.loading
+                            ? _mainGreen.withValues(alpha: 0.35)
+                            : _mainGreen,
+                        size: 18,
+                      ),
+                      onPressed: viewModel.loading
+                          ? null
+                          : viewModel.refreshHistory,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -402,28 +433,44 @@ class _HandbookIncidentPageState extends State<HandbookIncidentPage> {
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(10),
                         ],
-                        decoration:
-                            _modernInputDecoration(
-                              label: 'Contact Number',
-                              icon: Icons.call_outlined,
-                            ).copyWith(
-                              prefixText: '+63 ',
-                            ),
+                        decoration: _modernInputDecoration(
+                          label: 'Contact Number',
+                          icon: Icons.call_outlined,
+                        ).copyWith(prefixText: '+63 '),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _studentIdController,
                         readOnly: viewModel.useProfileInfo,
                         keyboardType: TextInputType.number,
-                        validator: _validateStudentId,
+                        validator: (value) => viewModel.useProfileInfo
+                            ? null
+                            : _validateStudentId(value),
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(7),
                         ],
-                        decoration: _modernInputDecoration(
-                          label: 'Student ID (for updates)',
-                          icon: Icons.credit_card_outlined,
-                        ),
+                        decoration:
+                            _modernInputDecoration(
+                              label: 'Student ID (for updates)',
+                              icon: Icons.credit_card_outlined,
+                            ).copyWith(
+                              floatingLabelBehavior: viewModel.useProfileInfo
+                                  ? FloatingLabelBehavior.always
+                                  : FloatingLabelBehavior.auto,
+                              hintText: viewModel.useProfileInfo
+                                  ? _studentIdPlaceholderFromEmail(
+                                      viewModel.defaultEmail,
+                                      viewModel.defaultStudentId,
+                                    )
+                                  : null,
+                              hintStyle: viewModel.useProfileInfo
+                                  ? const TextStyle(color: Colors.black54)
+                                  : null,
+                              helperText: viewModel.useProfileInfo
+                                  ? 'Auto-derived from profile email.'
+                                  : null,
+                            ),
                       ),
                       const SizedBox(height: 10),
                       Container(

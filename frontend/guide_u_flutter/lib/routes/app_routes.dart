@@ -14,7 +14,7 @@ import '../views/admin_dashboard_screen.dart';
 import '../views/services_page.dart';
 
 class AppRoutes {
-    static const String directories = '/directories';
+  static const String directories = '/directories';
   static const String main = '/';
   static const String login = '/login';
   static const String article = '/article';
@@ -57,6 +57,8 @@ class AppRoutes {
             articleTitle: args?['title']?.toString() ?? 'Article',
             articleContent: args?['content']?.toString() ?? 'No content.',
             articleId: args?['id']?.toString(),
+            chapter: args?['chapter']?.toString(),
+            section: args?['section']?.toString(),
           ),
         );
       case saved:
@@ -64,9 +66,7 @@ class AppRoutes {
           builder: (_) => const HandbookSavedArticlesPage(),
         );
       case directories:
-        return MaterialPageRoute(
-          builder: (_) => const DirectoriesPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const DirectoriesPage());
       case search:
         return MaterialPageRoute(builder: (_) => const HandbookSearchScreen());
       case chatbot:

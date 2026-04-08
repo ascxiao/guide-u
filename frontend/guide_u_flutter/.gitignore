@@ -44,3 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .env
+
+frontend/guide_u_flutter/linux/flutter/generated_plugin_registrant.cc
+frontend/guide_u_flutter/linux/flutter/generated_plugins.cmake
+frontend/guide_u_flutter/macos/Flutter/GeneratedPluginRegistrant.swift
+frontend/guide_u_flutter/windows/flutter/generated_plugin_registrant.cc
+frontend/guide_u_flutter/windows/flutter/generated_plugins.cmake
