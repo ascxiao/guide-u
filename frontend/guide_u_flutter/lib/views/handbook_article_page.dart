@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../services/article_events_service.dart';
+import '../services/session_service.dart';
 import '../view_models/saved_articles_view_model.dart';
 import '../widgets/handbook_chatbot_fab.dart';
 
@@ -38,6 +39,8 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
   double _readingProgress = 0;
 
   final ScrollController _scrollController = ScrollController();
+  final SessionService _sessionService = SessionService();
+  final ArticleEventsService _articleEventsService = ArticleEventsService();
 
   @override
   void initState() {
@@ -76,7 +79,7 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
       listen: false,
     );
 
-    final userId = Supabase.instance.client.auth.currentUser?.id ?? 'demo-user';
+    final userId = _sessionService.currentUserIdOrDemo;
 
     if (_isSaved) {
       await savedArticlesVM.removeSavedArticle(userId, widget.articleId!);
@@ -95,20 +98,9 @@ class _HandbookArticlePageState extends State<HandbookArticlePage> {
   Future<void> _trackArticleOpen() async {
     if (_hasTrackedOpen || widget.articleId == null) return;
 
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-
     _hasTrackedOpen = true;
 
-    try {
-      await Supabase.instance.client.from('article_view_events').insert({
-        'article_id': widget.articleId,
-        'user_id': user.id,
-        'source': 'mobile_app',
-      });
-    } catch (_) {
-      // Keep article reading flow uninterrupted if tracking fails.
-    }
+    await _articleEventsService.trackArticleOpen(articleId: widget.articleId!);
   }
 
   void _handleScroll() {
